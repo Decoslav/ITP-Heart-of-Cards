@@ -4,6 +4,7 @@ import Home from './pages/Home';
 import FAQPage from './pages/FAQ';
 import DeckPage from './pages/Deck';
 import Deckbuilder from './pages/Deckbuilder';
+import Profile from './pages/Profile';
 import { useState } from 'react';
 
 
@@ -21,9 +22,9 @@ function App() {
           <Route path="/faq" element={<FAQPage />} />
           <Route path="/deckbuilder" element={<Deckbuilder />} />
 
-
           <Route path="/deck" element={<DeckPage/>} />
           <Route path="/duell" element={<h1>Bereit zum Duell?</h1>} />
+          <Route path="/profile" element={<Profile />}/>
         </Routes>
       </div>
 

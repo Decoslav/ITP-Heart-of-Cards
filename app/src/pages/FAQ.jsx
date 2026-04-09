@@ -14,4 +14,4 @@ function FAQPage() {
   )
 }
 
-export default FAQPage
+export default FAQPage;

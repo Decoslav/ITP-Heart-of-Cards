@@ -8,4 +8,4 @@ function Deckbuilder() {
   )
 }
 
-export default Deckbuilder
+export default Deckbuilder;

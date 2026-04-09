@@ -13,4 +13,4 @@ function DeckPage() {
   )
 }
 
-export default DeckPage
+export default DeckPage;
