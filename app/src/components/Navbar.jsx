@@ -4,7 +4,9 @@ import './Navbar.css';
 function Navbar({ isLoggedIn }) {
   return (
     <nav className="navbar">
-      <div className="logo">🃏 Heart of Cards</div>
+      <div className="logo">
+        <Link to= "/">🃏 Heart of Cards</Link>
+      </div>
       
       <ul className="nav-links">
         <li><Link to="/" className="nav-link">Home</Link></li>
