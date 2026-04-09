@@ -17,6 +17,7 @@ function Navbar({ isLoggedIn }) {
             <li><Link to="/deckbuilder" className="nav-link">Deckbuilder</Link></li>
             <li><Link to="/duell" className="nav-link">Duellraum</Link></li>
             <li><Link to="/deck" className="nav-link">Deck</Link></li>
+            
           </>
         )}
       </ul>

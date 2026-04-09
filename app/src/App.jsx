@@ -1,8 +1,9 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Navbar from './components/Navbar';
-import Card from './components/Card';
 import Home from './pages/Home';
 import FAQPage from './pages/FAQ';
+import DeckPage from './pages/Deck';
+import Deckbuilder from './pages/Deckbuilder';
 import { useState } from 'react';
 
 
@@ -18,16 +19,10 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/faq" element={<FAQPage />} />
-          <Route path="/deckbuilder" element={<h1>Baue dein 20-Karten-Deck</h1>} />
+          <Route path="/deckbuilder" element={<Deckbuilder />} />
 
 
-          <Route path="/deck" element={
-            <div style={{ display: 'flex', gap: '20px', padding: '40px' }}>
-              {/* Hier erstellen wir drei verschiedene Karten mit einer Komponente! */}
-              <Card name="Feuerdrache" hp={25} atk={8} imageUrl="🔥" />
-              <Card name="Eishexe" hp={20} atk={5} imageUrl="/images/hexe.png" />
-              <Card name="Mage" hp={15} atk={10} imageUrl="/images/Mage.png" />
-            </div>} />
+          <Route path="/deck" element={<DeckPage/>} />
           <Route path="/duell" element={<h1>Bereit zum Duell?</h1>} />
         </Routes>
       </div>
