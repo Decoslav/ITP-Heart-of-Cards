@@ -1,10 +1,55 @@
-.deck-container {
-  display: grid;
-  /* Erstellt 4 Spalten mit gleicher Breite */
-  grid-template-columns: repeat(4, 1fr); 
-  gap: 20px;
+.builder-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
   padding: 40px;
-  /* Optional: Damit es bei 20 Karten (5 Reihen) bleibt */
-  max-width: 1200px;
-  margin: 0 auto;
+  background-color: #121212;
+  min-height: 100vh;
+}
+
+/* Deck Bereich oben - etwas dunklerer/abgesetzter Hintergrund */
+.deck-section {
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px dashed #444;
+  border-radius: 15px;
+  padding: 25px;
+  min-height: 350px; /* Damit der Bereich nicht einklappt */
+}
+
+.section-header {
+  margin-bottom: 20px;
+  text-align: center;
+  color: #ffd700; /* Gold für den Deck-Titel */
+}
+
+/* Gemeinsames Grid für beide Sektionen */
+.deck-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.divider {
+  height: 4px;
+  background: linear-gradient(90deg, transparent, #ffd700, transparent);
+  margin: 10px 0;
+}
+
+.empty-slot {
+  grid-column: span 4;
+  text-align: center;
+  padding: 50px;
+  color: #666;
+  font-style: italic;
+  font-size: 1.2rem;
+}
+
+/* Animation beim Hinzufügen (Optional) */
+.game-card {
+  transition: transform 0.2s ease;
+}
+
+.game-card:hover {
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.5);
 }
