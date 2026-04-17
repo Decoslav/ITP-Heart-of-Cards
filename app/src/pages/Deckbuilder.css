@@ -1,0 +1,10 @@
+.deck-container {
+  display: grid;
+  /* Erstellt 4 Spalten mit gleicher Breite */
+  grid-template-columns: repeat(4, 1fr); 
+  gap: 20px;
+  padding: 40px;
+  /* Optional: Damit es bei 20 Karten (5 Reihen) bleibt */
+  max-width: 1200px;
+  margin: 0 auto;
+}

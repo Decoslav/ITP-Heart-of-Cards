@@ -7,15 +7,18 @@ import './Card.css';
  * @param {number} atk - Die Angriffspunkte der Karte
  * @param {string} imageUrl - Der Pfad zum Bild (z.B. "/Witch.jpg" aus dem public-Ordner)
  */
-function Card({ name, hp, atk, imageUrl }) {
+
+let currentCards = [];
+
+function Card({ name, hp, atk, imageUrl, onCardClick }) {
   return (
-    <div className="game-card">
+
+    <div className="game-card" onClick= {onCardClick}>
       {/* Oberer Teil: Name und Lebenspunkte */}
       <div className="card-header">
         <span className="card-name">{name}</span>
         <span className="hp-badge">{hp} HP</span>
       </div>
-      
       {/* Mittlerer Teil: Das Artwork der Karte */}
       <div className="card-image-container">
         {imageUrl ? (
