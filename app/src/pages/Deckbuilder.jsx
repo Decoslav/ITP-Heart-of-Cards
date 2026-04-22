@@ -52,10 +52,12 @@ function DeckPage() {
       {/* --- POOL BEREICH (UNTEN) --- */}
       <section className="pool-section">
         <h3>Verfügbare Karten (Pool)</h3>
+        <h3>Tanks</h3>
         <div className="deck-grid">
+          
           <Card 
-            name="Feuerdrache" hp={25} atk={8} imageUrl="🔥" 
-            onCardClick={() => handleAddCard({ name: "Feuerdrache", hp: 25, atk: 8, imageUrl: "🔥" })} 
+            name="Feuerdrache" hp={25} atk={8} imageUrl="/images/FireDragon.png" 
+            onCardClick={() => handleAddCard({ name: "Feuerdrache", hp: 25, atk: 8, imageUrl: "/images/FireDragon.png" })} 
           />
           <Card 
             name="Eishexe" hp={20} atk={5} imageUrl="/images/hexe.png" 
@@ -79,31 +81,46 @@ function DeckPage() {
             onCardClick={() => handleAddCard({ name: "Shadow-Ninja", hp: 12, atk: 18, imageUrl: "/images/ShadowNinja.png" })} 
           />
           <Card 
-            name="Gnome" hp={30} atk={4} imageUrl="🍄" 
-            onCardClick={() => handleAddCard({ name: "Gnome", hp: 30, atk: 4, imageUrl: "🍄" })}
+            name="Gnome" hp={30} atk={4} imageUrl="/images/Gnome.png" 
+            onCardClick={() => handleAddCard({ name: "Gnome", hp: 30, atk: 4, imageUrl: "/images/Gnome.png" })}
           />
           <Card 
-            name="Thunderbird" hp={22} atk={12} imageUrl="⚡" 
-            onCardClick={() => handleAddCard({ name: "Thunderbird", hp: 22, atk: 12, imageUrl: "⚡" })}
+            name="Thunderbird" hp={22} atk={12} imageUrl="/images/ThunderBird.png" 
+            onCardClick={() => handleAddCard({ name: "Thunderbird", hp: 22, atk: 12, imageUrl: "/images/ThunderBird.png" })}
           />
           <Card 
-            name="Ice-Golem" hp={60} atk={2} imageUrl="❄️" 
-            onCardClick={() => handleAddCard({ name: "Ice-Golem", hp: 60, atk: 2, imageUrl: "❄️" })}
-          />
-
-          <Card 
-            name="Bone-Warrior" hp={10} atk={20} imageUrl="💀" 
-            onCardClick={() => handleAddCard({ name: "Bone-Warrior", hp: 10, atk: 20, imageUrl: "💀" })} 
+            name="Ice-Golem" hp={60} atk={2} imageUrl="/images/IceGolem.png" 
+            onCardClick={() => handleAddCard({ name: "Ice-Golem", hp: 60, atk: 2, imageUrl: "/images/IceGolem.png" })}
           />
 
           <Card 
-            name="Sea-Guardian" hp={40} atk={6} imageUrl="🔱" 
-            onCardClick={() => handleAddCard({ name: "Sea-Guardian", hp: 40, atk: 6, imageUrl: "🔱" })} 
+            name="Bone-Warrior" hp={10} atk={20} imageUrl="/images/BoneWarrior.png" 
+            onCardClick={() => handleAddCard({ name: "Bone-Warrior", hp: 10, atk: 20, imageUrl: "/images/BoneWarrior.png" })} 
           />
 
           <Card 
-            name="Phoenix" hp={20} atk={12} imageUrl="🐦‍🔥" 
-            onCardClick={() => handleAddCard({ name: "Phoenix", hp: 20, atk: 12, imageUrl: "🐦‍🔥" })} 
+            name="Sea-Guardian" hp={40} atk={6} imageUrl="/images/SeaGuardian.png" 
+            onCardClick={() => handleAddCard({ name: "Sea-Guardian", hp: 40, atk: 6, imageUrl: "/images/SeaGuardian.png" })} 
+          />
+
+          <Card 
+            name="Phoenix" hp={20} atk={12} imageUrl="/images/Phoenix.png" 
+            onCardClick={() => handleAddCard({ name: "Phoenix", hp: 20, atk: 12, imageUrl: "/images/Phoenix.png" })} 
+          />
+
+          <Card 
+            name="Ice-Mage" hp={15} atk={20} imageUrl="/images/IceMage.png" 
+            onCardClick={() => handleAddCard({ name: "Ice-Mage", hp: 15, atk: 20, imageUrl: "/images/IceMage.png" })}
+          />
+
+          <Card 
+            name="Ender-Dragon" hp={50} atk={5} imageUrl="/images/EnderDragon.png" 
+            onCardClick={() => handleAddCard({ name: "Ender-Dragon", hp: 50, atk: 5, imageUrl: "/images/EnderDragon.png" })}
+          />
+
+          <Card 
+            name="Bowser" hp={35} atk={10} imageUrl="/images/Bowser.png" 
+            onCardClick={() => handleAddCard({ name: "Bowser", hp: 35, atk: 10, imageUrl: "/images/Bowser.png" })}
           />
         </div>
       </section>
