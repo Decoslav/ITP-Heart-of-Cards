@@ -2,10 +2,32 @@ import { useState } from 'react';
 import './Deck.css';
 import Card from '../components/Card';
 
+const ALL_CARDS = [
+  // TANKS
+  { name: "Knight", hp: 50, atk: 5, imageUrl: "🧎", type: "tank" },
+  { name: "Ice-Golem", hp: 60, atk: 2, imageUrl: "/images/IceGolem.png", type: "tank" },
+  { name: "Sea-Guardian", hp: 40, atk: 6, imageUrl: "/images/SeaGuardian.png", type: "tank" },
+  { name: "Ender-Dragon", hp: 50, atk: 5, imageUrl: "/images/EnderDragon.png", type: "tank" },
+
+  // DAMAGE
+  { name: "Bone-Warrior", hp: 10, atk: 20, imageUrl: "/images/BoneWarrior.png", type: "damage" },
+  { name: "Ice-Mage", hp: 15, atk: 20, imageUrl: "/images/IceMage.png", type: "damage" },
+  { name: "Mage", hp: 15, atk: 10, imageUrl: "/images/Mage.png", type: "damage" },
+  { name: "Shadow-Ninja", hp: 12, atk: 18, imageUrl: "/images/ShadowNinja.png", type: "damage" },
+  { name: "Summoner", hp: 15, atk: 15, imageUrl: "🧙‍♂️", type: "damage" },
+
+  // HYBRID
+  { name: "Feuerdrache", hp: 25, atk: 8, imageUrl: "/images/FireDragon.png", type: "hybrid" },
+  { name: "Eishexe", hp: 20, atk: 5, imageUrl: "/images/hexe.png", type: "hybrid" },
+  { name: "Gnome", hp: 30, atk: 4, imageUrl: "/images/Gnome.png", type: "hybrid" },
+  { name: "Thunderbird", hp: 22, atk: 12, imageUrl: "/images/ThunderBird.png", type: "hybrid" },
+  { name: "Phoenix", hp: 20, atk: 12, imageUrl: "/images/Phoenix.png", type: "hybrid" },
+  { name: "Bowser", hp: 35, atk: 10, imageUrl: "/images/Bowser.png", type: "hybrid" }
+];
+
 function DeckPage() {
   const [selectedCards, setSelectedCards] = useState([]);
 
-  // Logik: Hinzufügen zum Deck
   const handleAddCard = (cardData) => {
     const isAlreadyInDeck = selectedCards.some(card => card.name === cardData.name);
     if (selectedCards.length < 20 && !isAlreadyInDeck) {
@@ -17,7 +39,6 @@ function DeckPage() {
     }
   };
 
-  // Logik: Aus dem Deck entfernen
   const handleRemoveCard = (cardName) => {
     setSelectedCards((prev) => prev.filter(card => card.name !== cardName));
   };
@@ -25,11 +46,11 @@ function DeckPage() {
   return (
     <div className="builder-layout">
       
-      {/* --- DECK BEREICH (OBEN) --- */}
+      {/* --- DECK BEREICH --- */}
       <section className="deck-section">
         <div className="section-header">
           <h2>Mein Deck ({selectedCards.length} / 20)</h2>
-          <p>Klicke eine Karte, um sie zu entfernen</p>
+          <p>Klicke eine Karte zum Entfernen</p>
         </div>
         
         <div className="deck-grid">
@@ -40,7 +61,6 @@ function DeckPage() {
               onCardClick={() => handleRemoveCard(card.name)} 
             />
           ))}
-          {/* Platzhalter, falls Deck leer ist */}
           {selectedCards.length === 0 && (
             <div className="empty-slot">Wähle Karten aus dem Pool...</div>
           )}
@@ -49,82 +69,31 @@ function DeckPage() {
 
       <div className="divider"></div>
 
-      {/* --- POOL BEREICH (UNTEN) --- */}
+      {/* --- POOL BEREICH --- */}
       <section className="pool-section">
-        <h3>Verfügbare Karten (Pool)</h3>
-        <h3>Tanks</h3>
+        <h2>Verfügbare Karten</h2>
+
+        <h3>🛡️ Tanks</h3>
         <div className="deck-grid">
-          
-          <Card 
-            name="Feuerdrache" hp={25} atk={8} imageUrl="/images/FireDragon.png" 
-            onCardClick={() => handleAddCard({ name: "Feuerdrache", hp: 25, atk: 8, imageUrl: "/images/FireDragon.png" })} 
-          />
-          <Card 
-            name="Eishexe" hp={20} atk={5} imageUrl="/images/hexe.png" 
-            onCardClick={() => handleAddCard({ name: "Eishexe", hp: 20, atk: 5, imageUrl: "/images/hexe.png" })}
-          />
-          <Card 
-            name="Mage" hp={15} atk={10} imageUrl="/images/Mage.png" 
-            onCardClick={() => handleAddCard({ name: "Mage", hp: 15, atk: 10, imageUrl: "/images/Mage.png" })}
-          />
-          <Card 
-            name="Knight" hp={50} atk={5} imageUrl="🧎" 
-            onCardClick={() => handleAddCard({ name: "Knight", hp: 50, atk: 5, imageUrl: "🧎" })}
-          />
-          {/* Hier kannst du noch 16 weitere Karten einfügen */}
-          <Card 
-            name="Summoner" hp={15} atk={15} imageUrl="🧙‍♂️" 
-            onCardClick={() => handleAddCard({ name: "Summoner", hp: 15, atk: 15, imageUrl: "🧙‍♂️" })} 
-          />
-          <Card 
-            name="Shadow-Ninja" hp={12} atk={18} imageUrl="/images/ShadowNinja.png" 
-            onCardClick={() => handleAddCard({ name: "Shadow-Ninja", hp: 12, atk: 18, imageUrl: "/images/ShadowNinja.png" })} 
-          />
-          <Card 
-            name="Gnome" hp={30} atk={4} imageUrl="/images/Gnome.png" 
-            onCardClick={() => handleAddCard({ name: "Gnome", hp: 30, atk: 4, imageUrl: "/images/Gnome.png" })}
-          />
-          <Card 
-            name="Thunderbird" hp={22} atk={12} imageUrl="/images/ThunderBird.png" 
-            onCardClick={() => handleAddCard({ name: "Thunderbird", hp: 22, atk: 12, imageUrl: "/images/ThunderBird.png" })}
-          />
-          <Card 
-            name="Ice-Golem" hp={60} atk={2} imageUrl="/images/IceGolem.png" 
-            onCardClick={() => handleAddCard({ name: "Ice-Golem", hp: 60, atk: 2, imageUrl: "/images/IceGolem.png" })}
-          />
+          {ALL_CARDS.filter(c => c.type === "tank").map(card => (
+            <Card key={card.name} {...card} onCardClick={() => handleAddCard(card)} />
+          ))}
+        </div>
 
-          <Card 
-            name="Bone-Warrior" hp={10} atk={20} imageUrl="/images/BoneWarrior.png" 
-            onCardClick={() => handleAddCard({ name: "Bone-Warrior", hp: 10, atk: 20, imageUrl: "/images/BoneWarrior.png" })} 
-          />
+        <h3>⚔️ Damage</h3>
+        <div className="deck-grid">
+          {ALL_CARDS.filter(c => c.type === "damage").map(card => (
+            <Card key={card.name} {...card} onCardClick={() => handleAddCard(card)} />
+          ))}
+        </div>
 
-          <Card 
-            name="Sea-Guardian" hp={40} atk={6} imageUrl="/images/SeaGuardian.png" 
-            onCardClick={() => handleAddCard({ name: "Sea-Guardian", hp: 40, atk: 6, imageUrl: "/images/SeaGuardian.png" })} 
-          />
-
-          <Card 
-            name="Phoenix" hp={20} atk={12} imageUrl="/images/Phoenix.png" 
-            onCardClick={() => handleAddCard({ name: "Phoenix", hp: 20, atk: 12, imageUrl: "/images/Phoenix.png" })} 
-          />
-
-          <Card 
-            name="Ice-Mage" hp={15} atk={20} imageUrl="/images/IceMage.png" 
-            onCardClick={() => handleAddCard({ name: "Ice-Mage", hp: 15, atk: 20, imageUrl: "/images/IceMage.png" })}
-          />
-
-          <Card 
-            name="Ender-Dragon" hp={50} atk={5} imageUrl="/images/EnderDragon.png" 
-            onCardClick={() => handleAddCard({ name: "Ender-Dragon", hp: 50, atk: 5, imageUrl: "/images/EnderDragon.png" })}
-          />
-
-          <Card 
-            name="Bowser" hp={35} atk={10} imageUrl="/images/Bowser.png" 
-            onCardClick={() => handleAddCard({ name: "Bowser", hp: 35, atk: 10, imageUrl: "/images/Bowser.png" })}
-          />
+        <h3>⚖️ Hybrid</h3>
+        <div className="deck-grid">
+          {ALL_CARDS.filter(c => c.type === "hybrid").map(card => (
+            <Card key={card.name} {...card} onCardClick={() => handleAddCard(card)} />
+          ))}
         </div>
       </section>
-
     </div>
   );
 }
