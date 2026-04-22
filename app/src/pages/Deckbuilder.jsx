@@ -4,7 +4,7 @@ import Card from '../components/Card';
 
 const ALL_CARDS = [
   // TANKS
-  { name: "Knight", hp: 50, atk: 5, imageUrl: "🧎", type: "tank" },
+  { name: "Knight", hp: 50, atk: 5, imageUrl: "/images/Knight.png", type: "tank" },
   { name: "Ice-Golem", hp: 60, atk: 2, imageUrl: "/images/IceGolem.png", type: "tank" },
   { name: "Sea-Guardian", hp: 40, atk: 6, imageUrl: "/images/SeaGuardian.png", type: "tank" },
   { name: "Ender-Dragon", hp: 50, atk: 5, imageUrl: "/images/EnderDragon.png", type: "tank" },
@@ -12,13 +12,13 @@ const ALL_CARDS = [
   // DAMAGE
   { name: "Bone-Warrior", hp: 10, atk: 20, imageUrl: "/images/BoneWarrior.png", type: "damage" },
   { name: "Ice-Mage", hp: 15, atk: 20, imageUrl: "/images/IceMage.png", type: "damage" },
-  { name: "Mage", hp: 15, atk: 10, imageUrl: "/images/Mage.png", type: "damage" },
+  { name: "Goblin", hp: 15, atk: 10, imageUrl: "/images/Goblin.png", type: "damage" },
   { name: "Shadow-Ninja", hp: 12, atk: 18, imageUrl: "/images/ShadowNinja.png", type: "damage" },
-  { name: "Summoner", hp: 15, atk: 15, imageUrl: "🧙‍♂️", type: "damage" },
+  { name: "Summoner", hp: 15, atk: 15, imageUrl: "/images/Summoner.png", type: "damage" },
 
   // HYBRID
-  { name: "Feuerdrache", hp: 25, atk: 8, imageUrl: "/images/FireDragon.png", type: "hybrid" },
-  { name: "Eishexe", hp: 20, atk: 5, imageUrl: "/images/hexe.png", type: "hybrid" },
+  { name: "Fire-Dragon", hp: 25, atk: 8, imageUrl: "/images/FireDragon.png", type: "hybrid" },
+  { name: "Ice-Witch", hp: 20, atk: 5, imageUrl: "/images/IceWitch.png", type: "hybrid" },
   { name: "Gnome", hp: 30, atk: 4, imageUrl: "/images/Gnome.png", type: "hybrid" },
   { name: "Thunderbird", hp: 22, atk: 12, imageUrl: "/images/ThunderBird.png", type: "hybrid" },
   { name: "Phoenix", hp: 20, atk: 12, imageUrl: "/images/Phoenix.png", type: "hybrid" },
