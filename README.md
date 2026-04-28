@@ -1,14 +1,13 @@
-React Befehle
+# React Befehle
 
-node_modules ist in .gitignore deshalb jedes mal für ausführen nach clone
+Da `node_modules` in der `.gitignore` steht, müssen die Abhängigkeiten nach jedem Clone neu installiert werden.
 
-npm install     //im ordner app
-npm run dev     //im Ordner app
+```bash
+cd app
+npm install
+npm run dev
 
-Ordnerstruktur
-
-Repostory/ 
-        -- app         //für jeglichen Code (wird noch organisiert)
-        -- database     //für Datenbank 
-        -- documents        //für jegliche sonstige Dateien
-
+Repository/
+├── app/        # Für jeglichen Code, wird noch organisiert
+├── database/   # Für die Datenbank
+└── documents/  # Für jegliche sonstige Dateien
