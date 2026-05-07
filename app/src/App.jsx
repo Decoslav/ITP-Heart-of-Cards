@@ -5,6 +5,8 @@ import FAQPage from './pages/FAQ';
 import DeckPage from './pages/Deck';
 import Deckbuilder from './pages/Deckbuilder';
 import Profile from './pages/Profile';
+import Login from './pages/Login'
+import { logout } from './api/apiService';
 import { useState } from 'react';
 
 
@@ -12,9 +14,19 @@ function App() {
   // Simulierter Login-Status (später kommt das aus der Datenbank)
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
+  async function handleLogout() {
+    try{
+      await logout();
+    }catch (error){
+      console.error("Logout fehlgeschlagen:", error);
+    }
+    localStorage.removeItem("user");
+    setIsLoggedIn(false);
+  }
+
   return (
     <Router>
-      <Navbar isLoggedIn={isLoggedIn} />
+      <Navbar isLoggedIn={isLoggedIn} onLogout={handleLogout}/>
       
       <div style={{ padding: '20px' }}>
         <Routes>
@@ -25,6 +37,7 @@ function App() {
           <Route path="/deck" element={<DeckPage/>} />
           <Route path="/duell" element={<h1>Bereit zum Duell?</h1>} />
           <Route path="/profile" element={<Profile />}/>
+          <Route path="/login" element = {<Login setIsLoggedIn={setIsLoggedIn}/>}/>
         </Routes>
       </div>
 

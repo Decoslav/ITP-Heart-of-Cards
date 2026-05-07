@@ -1,4 +1,5 @@
-const baseURL = "../public/api/";
+//const baseURL = "../public/api/";
+const baseURL = "http://localhost/ITP-Heart-of-Cards/app/public/api/";
 
 export async function login(username, password) {
     const formData = new FormData();
@@ -26,5 +27,14 @@ export async function registration(email, username, password, passwordConfirm) {
         body : formData,
         credentials : "include"
     });
+    return response.json();
+}
+
+export async function logout() {
+    const response = await fetch(baseURL+ "logout.php", {
+        method : "POST",
+        credentials : "include",
+    });
+
     return response.json();
 }

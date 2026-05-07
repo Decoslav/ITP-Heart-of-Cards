@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 import './Navbar.css';
 
-function Navbar({ isLoggedIn }) {
+function Navbar({ isLoggedIn, onLogout }) {
   return (
     <nav className="navbar">
       <div className="logo">
@@ -23,9 +23,12 @@ function Navbar({ isLoggedIn }) {
       </ul>
 
       <div className="auth">
-        <button className="auth-btn">
-          {isLoggedIn ? "Logout" : "Login"}
-        </button>
+        {isLoggedIn ? (
+          <button className='auth-btn' onClick={onLogout}>Logout</button> 
+        ) : (
+          <Link to= "/login" className='auth-btn'>Login</Link>
+        )}
+        
       </div>
     </nav>
   );
