@@ -14,7 +14,7 @@ const ALL_CARDS = [
 
   // DAMAGE
   { name: "Bone-Warrior", hp: 10, atk: 20, imageUrl: "/images/BoneWarrior.png", type: "damage", description: "He forgot to die and keeps fighting."},
-  { name: "Ice-Mage", hp: 8, atk: 22, imageUrl: "/images/IceMage.png", type: "damage", description: "Absolute zero is achievable."},
+  { name: "Ice-Mage", hp: 8, atk: 22, imageUrl: "/images/IceMage.png", type: "damage", description: "Absolute zero not only in theory."},
   { name: "Goblin", hp: 20, atk: 10, imageUrl: "/images/Goblin.png", type: "damage", description: "An anomaly of the goblin kin, they don't read."},
   { name: "Shadow-Ninja", hp: 12, atk: 18, imageUrl: "/images/ShadowNinja.png", type: "damage", description: "Mid gap."},
   { name: "Summoner", hp: 15, atk: 15, imageUrl: "/images/Summoner.png", type: "damage", description: "Never alone."},
