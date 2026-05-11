@@ -1,6 +1,6 @@
 import './Card.css';
 
-function Card({ name, hp, atk, imageUrl, onCardClick }) {
+function Card({ name, hp, atk, imageUrl, description, onCardClick }) {
   return (
     <div className="game-card" onClick={onCardClick}>
       <div className="card-header">
@@ -22,7 +22,7 @@ function Card({ name, hp, atk, imageUrl, onCardClick }) {
       
       <div className="card-body">
         <p className="card-description">
-          Eine mächtige Karte für dein Duell.
+          {description ?? "Eine mächtige Karte für dein Duell."}
         </p>
       </div>
       
