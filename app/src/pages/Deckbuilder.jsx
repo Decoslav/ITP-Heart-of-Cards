@@ -4,18 +4,18 @@ import Card from '../components/Card';
 
 const ALL_CARDS = [
   // TANKS
-  { name: "Knight", hp: 50, atk: 5, imageUrl: "/images/Knight.png", type: "tank" },
-  { name: "Ice-Golem", hp: 60, atk: 2, imageUrl: "/images/IceGolem.png", type: "tank" },
+  { name: "Knight", hp: 60, atk: 4, imageUrl: "/images/Knight.png", type: "tank" },
+  { name: "Ice-Golem", hp: 50, atk: 4, imageUrl: "/images/IceGolem.png", type: "tank" },
   { name: "Sea-Guardian", hp: 40, atk: 6, imageUrl: "/images/SeaGuardian.png", type: "tank" },
   { name: "Ender-Dragon", hp: 50, atk: 5, imageUrl: "/images/EnderDragon.png", type: "tank" },
-  { name: "King Slime", hp: 65, atk: 1, imageUrl: "/images/king_slime.png", type: "tank" },
+  { name: "King Slime", hp: 64, atk: 2, imageUrl: "/images/king_slime.png", type: "tank" },
   { name: "Stronghold", hp: 45, atk: 5, imageUrl: "/images/stronghold.png", type: "tank" },
   { name: "Djinn", hp: 50, atk: 5, imageUrl: "/images/djinn.png", type: "tank" },
 
   // DAMAGE
   { name: "Bone-Warrior", hp: 10, atk: 20, imageUrl: "/images/BoneWarrior.png", type: "damage" },
-  { name: "Ice-Mage", hp: 15, atk: 20, imageUrl: "/images/IceMage.png", type: "damage" },
-  { name: "Goblin", hp: 15, atk: 10, imageUrl: "/images/Goblin.png", type: "damage" },
+  { name: "Ice-Mage", hp: 8, atk: 22, imageUrl: "/images/IceMage.png", type: "damage" },
+  { name: "Goblin", hp: 20, atk: 10, imageUrl: "/images/Goblin.png", type: "damage" },
   { name: "Shadow-Ninja", hp: 12, atk: 18, imageUrl: "/images/ShadowNinja.png", type: "damage" },
   { name: "Summoner", hp: 15, atk: 15, imageUrl: "/images/Summoner.png", type: "damage" },
   { name: "Sultan", hp: 14, atk: 16, imageUrl: "/images/sultan.png", type: "damage" },
@@ -27,7 +27,7 @@ const ALL_CARDS = [
   { name: "Thunderbird", hp: 22, atk: 12, imageUrl: "/images/ThunderBird.png", type: "hybrid" },
   { name: "Phoenix", hp: 20, atk: 12, imageUrl: "/images/Phoenix.png", type: "hybrid" },
   { name: "Bowser", hp: 30, atk: 7, imageUrl: "/images/Bowser.png", type: "hybrid" },
-  { name: "Dragon Monk", hp: 26, atk: 10, imageUrl: "/images/dragon_monk.png", type: "hybrid" },
+  { name: "Dragon Monk", hp: 24, atk: 10, imageUrl: "/images/dragon_monk.png", type: "hybrid" },
 ];
 
 function DeckPage() {
