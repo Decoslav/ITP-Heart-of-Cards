@@ -26,7 +26,10 @@ function Navbar({ isLoggedIn, onLogout }) {
         {isLoggedIn ? (
           <button className='auth-btn' onClick={onLogout}>Logout</button> 
         ) : (
+          <>
           <Link to= "/login" className='auth-btn'>Login</Link>
+          <Link to= "/registration" className='auth-btn'>Registration</Link>
+          </>
         )}
         
       </div>

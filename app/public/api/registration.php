@@ -25,7 +25,7 @@ if($_SERVER["REQUEST_METHOD"] !== "POST"){
 $email = trim($_POST["email"]?? "");
 $username = trim($_POST["username"]?? "");
 $password = $_POST["password"]?? "";
-$password_confirm = $_POST["password_confirm"]?? "";
+$passwordConfirm = $_POST["passwordConfirm"]?? "";
 
 $errors = [];
 
@@ -47,7 +47,7 @@ if($password === "" || strlen($password) < 8){
     $errors[] = 'Das Passwort muss mindestens ein Sonderzeichen enthalten.';
 }
 
-if($password !== $password_confirm){
+if($password !== $passwordConfirm){
     $errors[] = "Die Passwörter stimmen nicht überein";
 }
 
