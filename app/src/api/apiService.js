@@ -38,3 +38,31 @@ export async function logout() {
 
     return response.json();
 }
+
+export async function saveDeck(name, cards) {
+    const response = await fetch (baseURL + "saveDeck.php",{
+        method: "POST", 
+        headers: {"Content-Type" : "application/json"},
+        credentials : "include",
+        body : JSON.stringify({
+            name: name,
+            cards : cards.map((card) =>({
+
+                name: card.name,
+                hp: card.name,
+                atk: card.atk
+            }))
+        })
+    });
+
+    return response.json();
+}
+
+export async function getSavedDeck() {
+    const response = await fetch(baseURL + "getDeck.php",{
+        method: "GET",
+        credentials: "include"
+    });
+
+    return response.json();
+}

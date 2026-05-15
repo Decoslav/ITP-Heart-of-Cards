@@ -1,6 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Card from '../components/Card';
 import './Deckbuilder.css';
+import { getSavedDeck, saveDeck } from '../api/apiService';
+
+const MAX_DECK_CARDS = 10;
 
 const ALL_CARDS = [
 
@@ -24,7 +27,7 @@ const ALL_CARDS = [
   // HYBRID
   { name: "Fire-Dragon", hp: 25, atk: 8, imageUrl: "/images/FireDragon.png", type: "hybrid", description: "A dragon that burns all his enemies."},
   { name: "Ice-Witch", hp: 20, atk: 5, imageUrl: "/images/IceWitch.png", type: "hybrid", description: "Ice cold spells and an ice cold heart."},
-  { name: "Gnome", hp: 30, atk: 4, imageUrl: "/images/Gnome.png", type: "hybrid", description: "After 1000 years he learned to control lighnting."},
+  { name: "Gnome", hp: 30, atk: 4, imageUrl: "/images/Gnome.png", type: "hybrid", description: "After 1000 years he learned to control lightning."},
   { name: "Thunderbird", hp: 22, atk: 12, imageUrl: "/images/ThunderBird.png", type: "hybrid", description: "In the east they call her 'Taifun', in the west 'Hurricane' and in the south 'Cyclone'."},
   { name: "Phoenix", hp: 20, atk: 12, imageUrl: "/images/Phoenix.png", type: "hybrid", description: "Phoenix never dies."},
   { name: "Bowser", hp: 30, atk: 7, imageUrl: "/images/Bowser.png", type: "hybrid", description: "His name is 'Cupcake' and he doesn't bite."},
@@ -69,9 +72,33 @@ function mapCardNamesToCards(cardNames) {
     .filter(Boolean);
 }
 
+//gespeicherte karten bekommen wieder ihre lokal gespeicherten bilder
+function hydrateSavedCards(cardsFromApi){
+  return cardsFromApi
+      .map((apiCard)=>{
+        const localCard = ALL_CARDS.find((card) => card.name === apiCard.name);
+
+        return localCard ??{
+          name: apiCard.name,
+          hp: apiCard.hp,
+          atk: apiCard. atk,
+          imageUrl: "",
+          type : "saved",
+          description: "Gespeicherte Karte."
+        };
+      })
+      .filter(Boolean);
+}
+
 function Deckbuilder() {
-  const [selectedDeckId, setSelectedDeckId] = useState(PRESET_DECKS[0].id);
-  const [selectedCards, setSelectedCards] = useState([]);
+
+  const firstPreset = getPresetById(PRESET_DECKS[0].id);
+  const [selectedDeckId, setSelectedDeckId] = useState(firstPreset.id);
+  const [deckName, setDeckName] = useState(firstPreset.name);
+  const [selectedCards, setSelectedCards] = useState(() => mapCardNamesToCards(firstPreset.cards));
+  const [statutsMessage, setStatusMessage] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+
 
   const selectedDeck = useMemo(() => {
     const preset = getPresetById(selectedDeckId);
@@ -89,13 +116,37 @@ function Deckbuilder() {
     }));
   }, []);
 
-  const visibleDeckCards = selectedCards.length > 0 ? selectedCards : selectedDeck.cards;
+  const visibleDeckCards = selectedCards;
 
   const totalHp = visibleDeckCards.reduce((sum, card) => sum + card.hp, 0);
   const totalAtk = visibleDeckCards.reduce((sum, card) => sum + card.atk, 0);
 
+  useEffect(() => {
+    async function loadSavedDeck() {
+      const data = await getSavedDeck();
+
+      if(data.success && data.deck){
+        setDeckName(data.deck.name);
+        setSelectedCards(hydrateSavedCards(data.deck.cards));
+        setStatusMessage("Gespeichertes Deck löschen");
+      }else if(!data.success){
+        setStatusMessage(data.message);
+      }
+    }
+
+    loadSavedDeck();
+  }, []);
+
   function handleAddCard(card) {
-    setSelectedCards((currentCards) => [...currentCards, card]);
+    setSelectedCards((currentCards) => {
+        if(currentCards.length >= MAX_DECK_CARDS){
+          setStatusMessage("Ein Deck darf maximal 10 Karten enthalten");
+          return currentCards;
+        }
+
+        setStatusMessage("");
+        return [...currentCards, card];
+    });
   }
 
   function handleRemoveCard(indexToRemove) {
@@ -108,7 +159,35 @@ function Deckbuilder() {
     const preset = getPresetById(deckId);
     const presetCards = mapCardNamesToCards(preset.cards);
 
+    setDeckName(preset.name);
     setSelectedCards(presetCards);
+    setStatusMessage("");
+  }
+
+  async function handleSaveDeck() {
+    
+    if(selectedCards.length === 0){
+      setStatusMessage("Wähle mindestens eine Karte aus");
+      return;
+    }
+
+    if(selectedCards.length > MAX_DECK_CARDS){
+      setStatusMessage("Ein Deck darf maximal 10 Karten haben");
+      return;
+    }
+
+    setIsSaving(true);
+    setStatusMessage("");
+
+    const data= await saveDeck(deckName, selectedCards);
+
+    if(data.success){
+      setStatusMessage("Deck wurde gespeichert");
+    }else{
+      setStatusMessage("data.message");
+    }
+
+    setIsSaving(false);
   }
 
   return (
@@ -139,13 +218,20 @@ function Deckbuilder() {
         <div className="section-top">
           <div>
             <p className="eyebrow">Aktuell ausgewählt</p>
-            <h2>{selectedDeck.name}</h2>
+            <h2>{deckName}</h2>
           </div>
           <div className="deck-stats">
-            <span>{visibleDeckCards.length} Karten</span>
+            <span>{visibleDeckCards.length}/{MAX_DECK_CARDS} Karten</span>
             <span>{totalHp} HP</span>
             <span>{totalAtk} ATK</span>
           </div>
+          
+          <div>
+            <input type='text' value={deckName} maxLength={50} onChange={(event) => setDeckName(event.target.value)}placeholder='Deckname' />
+            <button type='button' onClick={handleSaveDeck} disabled={isSaving}>{isSaving ? "Speichert" : "Deck speichern" }</button>
+          </div>
+
+          {statutsMessage && <p>{statutsMessage}</p>}
         </div>
 
         <div className="deck-card-grid">
@@ -165,7 +251,7 @@ function Deckbuilder() {
             <p className="eyebrow">Kartenpool</p>
             <h2>Karten mehrfach hinzufügen</h2>
           </div>
-          <p className="pool-hint">Klicke eine Karte so oft du willst, um mehrere Kopien ins Deck zu legen.</p>
+          <p className="pool-hint">Klicke eine Karte so oft du willst, maximal 10 Karten sind erlaubt.</p>
         </div>
 
         {cardsByType.map((section) => (
