@@ -7,6 +7,7 @@ import Deckbuilder from './pages/Deckbuilder';
 import Profile from './pages/Profile';
 import Login from './pages/Login'
 import Registration from './pages/Registration';
+import Duellraum from './pages/Duellraum';
 import { logout } from './api/apiService';
 import { useState } from 'react';
 
@@ -36,7 +37,7 @@ function App() {
           <Route path="/deckbuilder" element={<Deckbuilder />} />
 
           <Route path="/deck" element={<DeckPage/>} />
-          <Route path="/duell" element={<h1>Bereit zum Duell?</h1>} />
+          <Route path="/duell" element={<Duellraum/>} />
           <Route path="/profile" element={<Profile />}/>
           <Route path="/registration" element={<Registration setIsLoggedIn={setIsLoggedIn}/>}/>
           <Route path="/login" element = {<Login setIsLoggedIn={setIsLoggedIn}/>}/>

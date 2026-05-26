@@ -1,0 +1,14 @@
+.duellraum-page {
+    width: 100%;
+  box-sizing: border-box;
+  min-height: 100vh;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 28px;
+  background:
+    radial-gradient(circle at top, rgba(137, 97, 255, 0.18), transparent 40%),
+    linear-gradient(180deg, #11131f 0%, #090a12 100%);
+  color: #f5f3ff;
+}
