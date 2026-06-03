@@ -98,7 +98,11 @@ function Deckbuilder() {
   const [selectedCards, setSelectedCards] = useState(() => mapCardNamesToCards(firstPreset.cards));
   const [statutsMessage, setStatusMessage] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedTypeFilter, setSelectedTypeFilter] = useState("all");
+  const [sortOption, setSortOption] = useState("name-asc");
+  const [minHpFilter, setMinHpFilter] = useState(0);
+  const [minAtkFilter, setMinAtkFilter] = useState(0);
 
   const selectedDeck = useMemo(() => {
     const preset = getPresetById(selectedDeckId);
@@ -109,12 +113,68 @@ function Deckbuilder() {
     };
   }, [selectedDeckId]);
 
-  const cardsByType = useMemo(() => {
-    return CARD_SECTIONS.map((section) => ({
-      ...section,
-      cards: ALL_CARDS.filter((card) => card.type === section.type),
-    }));
-  }, []);
+  const filteredAndSortedCards = useMemo(() => {
+
+  let filteredCards = [...ALL_CARDS];
+
+  // Suche nach Name
+  if (searchTerm.trim() !== "") {
+    filteredCards = filteredCards.filter((card) =>
+      card.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }
+
+  // Typfilter
+  if (selectedTypeFilter !== "all") {
+    filteredCards = filteredCards.filter(
+      (card) => card.type === selectedTypeFilter
+    );
+  }
+
+  // HP Filter
+  filteredCards = filteredCards.filter(
+    (card) => card.hp >= minHpFilter
+  );
+
+  // Angriff Filter
+  filteredCards = filteredCards.filter(
+    (card) => card.atk >= minAtkFilter
+  );
+
+  // Sortierung
+  switch (sortOption) {
+    case "name-asc":
+      filteredCards.sort((a, b) =>
+        a.name.localeCompare(b.name)
+      );
+      break;
+
+    case "hp-desc":
+      filteredCards.sort((a, b) => b.hp - a.hp);
+      break;
+
+    case "atk-desc":
+      filteredCards.sort((a, b) => b.atk - a.atk);
+      break;
+
+    default:
+      break;
+  }
+
+  return CARD_SECTIONS.map((section) => ({
+    ...section,
+    cards: filteredCards.filter(
+      (card) => card.type === section.type
+    ),
+  }));
+
+}, [
+  searchTerm,
+  selectedTypeFilter,
+  sortOption,
+  minHpFilter,
+  minAtkFilter,
+]);
 
   const visibleDeckCards = selectedCards;
 
@@ -254,7 +314,67 @@ function Deckbuilder() {
           <p className="pool-hint">Klicke eine Karte so oft du willst, maximal 10 Karten sind erlaubt.</p>
         </div>
 
-        {cardsByType.map((section) => (
+        <div className="filter-toolbar">
+
+          <input
+            type="text"
+            placeholder="Karte suchen..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+
+          <select
+            value={selectedTypeFilter}
+            onChange={(e) => setSelectedTypeFilter(e.target.value)}
+          >
+            <option value="all">Alle Typen</option>
+            <option value="tank">Tanks</option>
+            <option value="damage">Damage</option>
+            <option value="hybrid">Hybrid</option>
+          </select>
+
+          <select
+            value={sortOption}
+            onChange={(e) => setSortOption(e.target.value)}
+          >
+            <option value="name-asc">Name A-Z</option>
+            <option value="hp-desc">HP absteigend</option>
+            <option value="atk-desc">ATK absteigend</option>
+          </select>
+
+          <div className="number-filter">
+            <label>Min HP</label>
+            <input
+              type="number"
+              value={minHpFilter}
+              onChange={(e) => setMinHpFilter(Number(e.target.value))}
+            />
+          </div>
+
+          <div className="number-filter">
+            <label>Min ATK</label>
+            <input
+              type="number"
+              value={minAtkFilter}
+              onChange={(e) => setMinAtkFilter(Number(e.target.value))}
+            />
+          </div>
+
+          <button
+            onClick={() => {
+              setSearchTerm("");
+              setSelectedTypeFilter("all");
+              setSortOption("name-asc");
+              setMinHpFilter(0);
+              setMinAtkFilter(0);
+            }}
+          >
+            Filter zurücksetzen
+          </button>
+
+        </div>
+
+        {filteredAndSortedCards.map((section) => (
           <div className="pool-group" key={section.type}>
             <h3>{section.title}</h3>
             <div className="pool-grid">

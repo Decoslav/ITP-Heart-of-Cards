@@ -187,3 +187,33 @@
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   }
 }
+
+.filter-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding: 1rem;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.05);
+}
+
+.filter-toolbar input,
+.filter-toolbar select {
+  padding: 0.7rem 1rem;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: #111;
+  color: white;
+}
+
+.number-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.number-filter label {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
