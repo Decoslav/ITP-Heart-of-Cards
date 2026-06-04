@@ -51,6 +51,11 @@ function Deckbuilder() {
     loadDecks().catch(() => {});
   }, []);
 
+  //Deck für Duellraum im localstorage
+  useEffect(() => {
+    localStorage.setItem('active_duel_deck', JSON.stringify(selectedCards));
+  }, [selectedCards]);
+
   // ── Karten filtern & sortieren ───────────────────────────────────────────
   const filteredAndSortedCards = useMemo(() => {
     let cards = [...ALL_CARDS];
