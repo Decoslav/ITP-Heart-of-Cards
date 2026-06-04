@@ -3,13 +3,25 @@ import Card from '../components/Card';
 import './Duellraum.css';
 
 function Duellraum() {
-  const [deck, setDeck] = useState([]);           // Nachziehstapel (seitlich)
-  const [hand, setHand] = useState([]);           // Karten auf der Hand (unten)
-  const [field, setField] = useState([]);         // Karten auf dem Spielfeld (Mitte)
-  const [graveyard, setGraveyard] = useState([]); // Karten im Friedhof (seitlich)
   const [error, setError] = useState('');
+  
+  // Runden-Verwaltung
+  const [activePlayer, setActivePlayer] = useState(1); // 1 = Unten, 2 = Oben
+  const [isTransitioning, setIsTransitioning] = useState(false); // Verdeckt den Screen beim Wechsel
 
-  // Deck laden und mischen beim Start
+  // Zustand für Spieler 1 (Unten)
+  const [deck1, setDeck1] = useState([]);
+  const [hand1, setHand1] = useState([]);
+  const [field1, setField1] = useState([]);
+  const [grave1, setGrave1] = useState([]);
+
+  // Zustand für Spieler 2 (Oben)
+  const [deck2, setDeck2] = useState([]);
+  const [hand2, setHand2] = useState([]);
+  const [field2, setField2] = useState([]);
+  const [grave2, setGrave2] = useState([]);
+
+  // Beide Decks unabhängig voneinander aus demselben gewählten Deck laden & mischen
   useEffect(() => {
     const savedDeck = localStorage.getItem('active_duel_deck');
     if (!savedDeck) {
@@ -23,39 +35,60 @@ function Duellraum() {
       return;
     }
 
-    const shuffled = [...parsedCards];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
+    // Funktion zum Mischen
+    const shuffle = (array) => {
+      const shuffled = [...array];
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+      }
+      return shuffled;
+    };
 
-    setHand(shuffled.slice(0, 3));
-    setDeck(shuffled.slice(3));
+    const s1 = shuffle(parsedCards);
+    const s2 = shuffle(parsedCards);
+
+    // Spieler 1 Setup
+    setHand1(s1.slice(0, 3));
+    setDeck1(s1.slice(3));
+
+    // Spieler 2 Setup
+    setHand2(s2.slice(0, 3));
+    setDeck2(s2.slice(3));
   }, []);
 
-  // Karte ziehen
+  // Karte ziehen (Nur für den aktiven Spieler)
   function drawCard() {
-    if (deck.length === 0) {
-      alert('Keine Karten mehr im Nachziehstapel!');
-      return;
+    if (activePlayer === 1) {
+      if (deck1.length === 0) return alert('Dein Nachziehstapel ist leer!');
+      setHand1([...hand1, deck1[0]]);
+      setDeck1(deck1.slice(1));
+    } else {
+      if (deck2.length === 0) return alert('Dein Nachziehstapel ist leer!');
+      setHand2([...hand2, deck2[0]]);
+      setDeck2(deck2.slice(1));
     }
-    const nextCard = deck[0];
-    setDeck(curDeck => curDeck.slice(1));
-    setHand(curHand => [...curHand, nextCard]);
   }
 
-  // Karte von der Hand aufs Spielfeld legen
-  function playCard(handIdx) {
-    const cardToPlay = hand[handIdx];
-    setHand(curHand => curHand.filter((_, i) => i !== handIdx));
-    setField(curField => [...curField, cardToPlay]);
+  // Karte ausspielen (Nur für den aktiven Spieler)
+  function playCard(index) {
+    if (activePlayer === 1) {
+      setField1([...field1, hand1[index]]);
+      setHand1(hand1.filter((_, i) => i !== index));
+    } else {
+      setField2([...field2, hand2[index]]);
+      setHand2(hand2.filter((_, i) => i !== index));
+    }
   }
 
-  // Karte vom Spielfeld auf den Friedhof schicken
-  function sendToGraveyard(fieldIdx) {
-    const cardToDestroy = field[fieldIdx];
-    setField(curField => curField.filter((_, i) => i !== fieldIdx));
-    setGraveyard(curGrave => [cardToDestroy, ...curGrave]); // Neueste Karte oben auflegen
+  // Zug beenden & Bildschirm wechseln
+  function endTurn() {
+    setIsTransitioning(true);
+  }
+
+  function confirmNextTurn() {
+    setActivePlayer(activePlayer === 1 ? 2 : 1);
+    setIsTransitioning(false);
   }
 
   if (error) {
@@ -67,78 +100,136 @@ function Duellraum() {
     );
   }
 
+  // Sichtschutz-Overlay bei Spielerwechsel (Spionage-Schutz)
+  if (isTransitioning) {
+    return (
+      <div className="duellraum-page transition-screen">
+        <div className="transition-card">
+          <h2>Spieler {activePlayer === 1 ? '1' : '2'} hat seinen Zug beendet!</h2>
+          <p>Übergib den Computer an <strong>Spieler {activePlayer === 1 ? '2' : '1'}</strong>.</p>
+          <button className="turn-btn confirm-btn" onClick={confirmNextTurn}>
+            Ich bin Spieler {activePlayer === 1 ? '2' : '1'} (Hand anzeigen)
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="duellraum-page">
-      <header className="duell-header">
-        <h1>⚔️ Das Duell beginnt ⚔️</h1>
-      </header>
-
-      {/* DAS NEUE ARENA-LAYOUT */}
-      <main className="arena-container">
+      <div className="arena-fullscreen">
         
-        {/* LINKE SEITE & MITTE: DAS HAUPTSPIELFELD */}
-        <section className="main-battlezone">
-          
-          {/* MITTE: DAS SPIELFELD */}
-          <div className="battlefield-zone">
-            <h3>⚔️ Spielfeld</h3>
-            <div className="battlefield-grid">
-              {field.map((card, index) => (
-                <div key={`field-${card.name}-${index}`} className="field-card-wrapper" onClick={() => sendToGraveyard(index)}>
-                  <Card {...card} />
-                  <div className="card-overlay-hint">Zerstören</div>
-                </div>
-              ))}
-              {field.length === 0 && (
-                <p className="empty-zone-txt">Klicke eine Karte auf deiner Hand an, um sie auszuspielen!</p>
+        {/* ================= SPIELER 2 HÄLFTE (OBEN) ================= */}
+        <section className={`player-side enemy-side ${activePlayer === 2 ? 'active-glow' : 'inactive-dark'}`}>
+          <div className="side-main">
+            
+            {/* SPIELER 2 HAND (Verdeckt, wenn S1 am Zug ist) */}
+            <div className="hand-zone enemy-hand">
+              {activePlayer === 2 ? (
+                hand2.map((card, index) => (
+                  <div key={`p2-hand-${index}`} className="mini-card-wrapper click-play" onClick={() => playCard(index)}>
+                    <Card {...card} />
+                    <div className="card-action-overlay color-green">Spielen</div>
+                  </div>
+                ))
+              ) : (
+                Array.from({ length: hand2.length }).map((_, i) => (
+                  <div key={`p2-back-${i}`} className="card-back-dummy">
+                    <div className="card-back-pattern">🔮</div>
+                  </div>
+                ))
               )}
+              {hand2.length === 0 && <p className="empty-hand-hint">Keine Karten auf der Hand.</p>}
+            </div>
+
+            {/* SPIELER 2 SPIELFELD */}
+            <div className="field-zone enemy-field">
+              <div className="field-grid">
+                {field2.map((card, index) => (
+                  <div key={`p2-field-${index}`} className="mini-card-wrapper">
+                    <Card {...card} />
+                  </div>
+                ))}
+                {field2.length === 0 && <span className="zone-label-bg">Spieler 2 Kampfzone</span>}
+              </div>
             </div>
           </div>
 
-          {/* UNTEN: DEINE KARTENHAND */}
-          <div className="player-hand-zone">
-            <h3>👋 Deine Hand ({hand.length} Karten)</h3>
-            <div className="player-hand-grid">
-              {hand.map((card, index) => (
-                <div key={`hand-${card.name}-${index}`} className="hand-card-wrapper" onClick={() => playCard(index)}>
-                  <Card {...card} />
-                  <div className="card-overlay-hint">Ausspielen</div>
-                </div>
-              ))}
-              {hand.length === 0 && (
-                <p className="empty-zone-txt">Keine Karten auf der Hand. Zieh eine neue Karte!</p>
-              )}
+          {/* SPIELER 2 SYSTEME (LINKS) */}
+          <aside className="side-system enemy-system">
+            <div className="mini-pile graveyard empty">
+              <span className="count">{grave2.length}</span>
+              <p>Friedhof</p>
             </div>
-          </div>
-
+            <div className={`mini-pile deck secondary ${activePlayer === 2 ? 'active-pull' : ''}`} onClick={activePlayer === 2 ? drawCard : undefined}>
+              <span className="count">{deck2.length}</span>
+              <p>Stapel</p>
+              {activePlayer === 2 && deck2.length > 0 && <span className="action-tag">Zieh</span>}
+            </div>
+          </aside>
         </section>
 
-        {/* RECHTE SEITE: DIE SYSTEM-ZONEN (SIDEBAR) */}
-        <aside className="sidebar-zones">
-          
-          {/* NACHZIEHSTAPEL */}
-          <div className={`card-deck-pile ${deck.length > 0 ? 'has-cards' : 'empty'}`} onClick={drawCard}>
-            <div className="pile-inner">
-              <span className="pile-count">{deck.length}</span>
+
+        {/* ================= MITTELBAR MIT PHASEN-CONTROLS ================= */}
+        <div className="arena-divider">
+          <div className="divider-line"></div>
+          <button className="turn-btn end-turn-btn" onClick={endTurn}>
+            ⚔️ Zug von Spieler {activePlayer} beenden
+          </button>
+          <div className="divider-line"></div>
+        </div>
+
+
+        {/* ================= SPIELER 1 HÄLFTE (UNTEN) ================= */}
+        <section className={`player-side player-self ${activePlayer === 1 ? 'active-glow' : 'inactive-dark'}`}>
+          {/* SPIELER 1 SYSTEME (RECHTS) */}
+          <aside className="side-system user-system">
+            <div className={`mini-pile deck ${activePlayer === 1 ? 'active-pull' : ''}`} onClick={activePlayer === 1 ? drawCard : undefined}>
+              <span className="count">{deck1.length}</span>
               <p>Stapel</p>
-              {deck.length > 0 && <small className="draw-hint">Ziehen</small>}
+              {activePlayer === 1 && deck1.length > 0 && <span className="action-tag">Zieh</span>}
             </div>
-          </div>
-
-          {/* FRIEDHOF */}
-          <div className={`card-graveyard-pile ${graveyard.length > 0 ? 'has-cards' : 'empty'}`}>
-            <div className="pile-inner">
-              <span className="pile-count">{graveyard.length}</span>
+            <div className="mini-pile graveyard empty">
+              <span className="count">{grave1.length}</span>
               <p>Friedhof</p>
-              {graveyard.length > 0 && (
-                <small className="last-dead-card">Oben: {graveyard[0].name}</small>
+            </div>
+          </aside>
+
+          <div className="side-main">
+            {/* SPIELER 1 SPIELFELD */}
+            <div className="field-zone user-field">
+              <div className="field-grid">
+                {field1.map((card, index) => (
+                  <div key={`p1-field-${index}`} className="mini-card-wrapper">
+                    <Card {...card} />
+                  </div>
+                ))}
+                {field1.length === 0 && <span className="zone-label-bg">Spieler 1 Kampfzone</span>}
+              </div>
+            </div>
+
+            {/* SPIELER 1 HAND (Verdeckt, wenn S2 am Zug ist) */}
+            <div className="hand-zone user-hand">
+              {activePlayer === 1 ? (
+                hand1.map((card, index) => (
+                  <div key={`p1-hand-${index}`} className="mini-card-wrapper click-play" onClick={() => playCard(index)}>
+                    <Card {...card} />
+                    <div className="card-action-overlay color-green">Spielen</div>
+                  </div>
+                ))
+              ) : (
+                Array.from({ length: hand1.length }).map((_, i) => (
+                  <div key={`p1-back-${i}`} className="card-back-dummy">
+                    <div className="card-back-pattern">🔮</div>
+                  </div>
+                ))
               )}
+              {hand1.length === 0 && <p className="empty-hand-hint">Keine Karten mehr!</p>}
             </div>
           </div>
+        </section>
 
-        </aside>
-
-      </main>
+      </div>
     </div>
   );
 }

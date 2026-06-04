@@ -1,234 +1,223 @@
 .duellraum-page {
-  padding: 1.5rem;
+  width: 100%;
+  height: 95vh;
   display: flex;
-  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  min-height: 90vh;
+  background-color: #0b0f19;
   color: #fff;
   font-family: sans-serif;
+  overflow: hidden;
+  padding: 0.5rem;
+  box-sizing: border-box;
 }
 
-.duell-header {
-  margin-bottom: 1.5rem;
-  text-align: center;
-}
-
-.duell-header h1 {
-  font-size: 2.2rem;
-  text-shadow: 0 0 10px rgba(147, 51, 234, 0.6);
-  margin: 0;
-}
-
-/* Haupt-Container trennt Spielfeld (links/mitte) von Sidebar (rechts) */
-.arena-container {
+.arena-fullscreen {
   width: 100%;
-  max-width: 1400px;
-  display: flex;
-  gap: 2rem;
-  align-items: flex-start;
-}
-
-/* Linker Hauptbereich */
-.main-battlezone {
-  flex: 1;
+  max-width: 1300px;
+  height: 100%;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  justify-content: space-between;
 }
 
-/* Zonen-Überschriften */
-.battlefield-zone h3, .player-hand-zone h3 {
-  font-size: 1.1rem;
-  color: #94a3b8;
-  margin: 0 0 0.75rem 0;
-  text-transform: uppercase;
-  letter-spacing: 1px;
+/* Spieler-Hälften */
+.player-side {
+  height: 46%;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  padding: 0.5rem;
+  border-radius: 16px;
+  transition: background-color 0.3s, opacity 0.3s;
 }
 
-/* Das Spielfeld in der Mitte */
-.battlefield-zone {
-  background: rgba(30, 41, 59, 0.4);
-  border: 2px dashed rgba(168, 85, 247, 0.2);
-  border-radius: 20px;
-  padding: 1.5rem;
-  min-height: 280px;
-  box-shadow: inset 0 4px 20px rgba(0, 0, 0, 0.5);
+.enemy-side { flex-direction: row-reverse; }
+
+/* Visuelle Markierung, wer gerade am Zug ist */
+.active-glow {
+  background-color: rgba(30, 41, 59, 0.15);
+  opacity: 1;
+}
+.inactive-dark {
+  opacity: 0.4;
+  pointer-events: none; /* Inaktiver Spieler darf nichts anklicken! */
 }
 
-.battlefield-grid {
+.side-main {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.enemy-side .side-main { flex-direction: column; }
+
+/* Zonen vergrößert für besseren Sitz */
+.field-zone {
+  height: 55%;
+  background: rgba(15, 23, 42, 0.3);
+  border: 1px dashed rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  position: relative;
   display: flex;
   justify-content: center;
-  gap: 1.25rem;
-  flex-wrap: wrap;
   align-items: center;
-  min-height: 220px;
 }
 
-/* Die Hand unten */
-.player-hand-zone {
+.hand-zone {
+  height: 41%;
   background: rgba(15, 23, 42, 0.6);
-  border-radius: 20px;
-  padding: 1.5rem;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-.player-hand-grid {
+.field-grid, .player-hand-grid {
   display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+}
+
+/* DIE ZUG-ÜBERGABE MITTELLINIE */
+.arena-divider {
+  height: 6%;
+  display: flex;
+  align-items: center;
   justify-content: center;
   gap: 1rem;
-  flex-wrap: wrap;
-  align-items: center;
-  min-height: 220px;
+  width: 100%;
 }
 
-/* Text für leere Zonen */
-.empty-zone-txt {
-  color: #4b5563;
-  font-style: italic;
-  font-size: 0.95rem;
+.divider-line {
+  flex: 1;
+  height: 1px;
+  border-bottom: 1px dashed rgba(255, 255, 255, 0.15);
 }
 
-/* Interaktive Karten-Wrapper (Klick-Effekte) */
-.field-card-wrapper, .hand-card-wrapper {
-  position: relative;
+.turn-btn {
+  background: linear-gradient(135deg, #7c3aed, #4c1d95);
+  border: 1px solid #a855f7;
+  color: white;
+  padding: 0.5rem 1.5rem;
+  border-radius: 99px;
+  font-weight: bold;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  font-size: 0.85rem;
+  box-shadow: 0 4px 10px rgba(124, 58, 237, 0.3);
+  transition: transform 0.2s, background-color 0.2s;
 }
 
-.hand-card-wrapper:hover {
-  transform: translateY(-15px) scale(1.03);
-  z-index: 5;
+.turn-btn:hover {
+  transform: scale(1.05);
+  background: linear-gradient(135deg, #8b5cf6, #5b21b6);
 }
 
-.field-card-wrapper:hover {
-  transform: scale(1.03);
-  box-shadow: 0 0 15px rgba(239, 68, 68, 0.5);
+/* Sidebars */
+.side-system {
+  width: 90px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
-/* Schickes Hover-Overlay, das anzeigt was beim Klick passiert */
-.card-overlay-hint {
+.mini-pile {
+  width: 100%;
+  height: 46%;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+}
+
+.mini-pile p { margin: 1px 0 0 0; color: #64748b; font-size: 0.65rem; }
+.mini-pile .count { font-size: 1.2rem; font-weight: bold; }
+.mini-pile.deck { background: linear-gradient(135deg, #4c1d95, #1e1b4b); border: 1px solid #a855f7; }
+.mini-pile.deck.secondary { background: linear-gradient(135deg, #7f1d1d, #450a0a); border: 1px solid #ef4444; }
+.mini-pile.deck.active-pull { cursor: pointer; }
+.mini-pile.graveyard { background: #111827; border: 1px solid #1f2937; }
+
+.action-tag { font-size: 0.6rem; font-weight: bold; color: #c084fc; text-transform: uppercase; }
+
+/* ================= PERFEKTE KARTEN-ANPASSUNG (KLEINER GEMACHT) ================= */
+.mini-card-wrapper, .card-back-dummy {
+  zoom: 0.48; /* Von 0.6 auf 0.48 herabgesetzt für perfekten Halt im Rahmen */
+  position: relative;
+}
+
+.card-back-dummy {
+  width: 150px;
+  height: 210px;
+  background: linear-gradient(135deg, #1e1b4b, #2e103f);
+  border: 2px solid #a855f7;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+}
+
+.click-play { cursor: pointer; }
+.click-play:hover { transform: translateY(-12px); z-index: 5; }
+
+/* Overlays */
+.card-action-overlay {
   position: absolute;
   top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  border-radius: 12px; /* Falls deine Card abgerundete Ecken hat */
+  background: rgba(0,0,0,0.8);
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   opacity: 0;
-  transition: opacity 0.2s;
+  transition: opacity 0.15s;
   font-weight: bold;
-  font-size: 1.1rem;
+  font-size: 1.4rem;
 }
 
-.hand-card-wrapper:hover .card-overlay-hint {
-  opacity: 1;
-  color: #34d399; /* Grün für Ausspielen */
-}
+.mini-card-wrapper:hover .card-action-overlay { opacity: 1; }
+.color-green { color: #34d399; }
 
-.field-card-wrapper:hover .card-overlay-hint {
-  opacity: 1;
-  color: #f87171; /* Rot für Zerstören */
-}
-
-
-/* RECHTE SEITE: SIDEBAR FÜR STAPEL & FRIEDHOF */
-.sidebar-zones {
-  width: 160px;
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
-  background: rgba(15, 23, 42, 0.4);
-  padding: 1.25rem;
-  border-radius: 20px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  align-items: center;
-}
-
-.card-deck-pile, .card-graveyard-pile {
-  width: 120px;
-  height: 170px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  text-align: center;
-  justify-content: center;
-  padding: 0.75rem;
-  user-select: none;
-  box-sizing: border-box;
-}
-
-/* Nachziehstapel Styling */
-.card-deck-pile {
-  background: linear-gradient(135deg, #4c1d95, #1e1b4b);
-  border: 2px solid #a855f7;
-  cursor: pointer;
-  box-shadow: 0 6px 12px rgba(0,0,0,0.4);
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.card-deck-pile:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 10px 16px rgba(168, 85, 247, 0.4);
-}
-
-.card-deck-pile.empty {
-  background: #111827;
-  border: 2px dashed #374151;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-/* Friedhof Styling */
-.card-graveyard-pile {
-  background: #111827;
-  border: 2px solid #374151;
-  transition: border-color 0.2s;
-}
-
-.card-graveyard-pile.has-cards {
-  background: linear-gradient(135deg, #1f2937, #111827);
-  border: 2px solid #f87171;
-  box-shadow: 0 4px 10px rgba(248, 113, 113, 0.2);
-}
-
-.pile-count {
-  font-size: 1.8rem;
+.zone-label-bg {
+  color: rgba(255,255,255,0.02);
+  font-size: 1.4rem;
   font-weight: bold;
-  display: block;
-  margin-bottom: 0.25rem;
-}
-
-.card-deck-pile .pile-count { color: #c084fc; }
-.card-graveyard-pile.has-cards .pile-count { color: #f87171; }
-
-.card-deck-pile p, .card-graveyard-pile p {
-  margin: 0;
-  font-size: 0.9rem;
-  color: #94a3b8;
-}
-
-.draw-hint {
-  font-size: 0.75rem;
-  color: #a855f7;
-  font-weight: bold;
-  display: block;
-  margin-top: 0.5rem;
   text-transform: uppercase;
+  user-select: none;
+  position: absolute;
 }
 
-.last-dead-card {
-  font-size: 0.7rem;
-  color: #fca5a5;
-  display: block;
-  margin-top: 0.5rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  width: 100%;
-}
-
-.error-state {
+/* ZUG-ÜBERGABE SCREEN (SICHTSCHUTZ) */
+.transition-screen {
+  background-color: #020617;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: 999;
+  display: flex;
   justify-content: center;
-  text-align: center;
+  align-items: center;
 }
+
+.transition-card {
+  text-align: center;
+  background: rgba(15, 23, 42, 0.8);
+  padding: 3rem;
+  border-radius: 24px;
+  border: 1px solid #7c3aed;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+}
+
+.transition-card h2 { color: #a855f7; margin-bottom: 1rem; }
+.transition-card p { color: #94a3b8; margin-bottom: 2rem; }
+.confirm-btn { padding: 0.75rem 2rem; font-size: 1rem; }
