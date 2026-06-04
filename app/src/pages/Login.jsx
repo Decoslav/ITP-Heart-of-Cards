@@ -1,8 +1,10 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import {login} from "../api/apiService";
+import { useNavigate, Link } from "react-router-dom";
+import { login } from "../api/apiService";
+import "./Auth.css";
+import "../styles/shared.css";
 
-function Login({setIsLoggedIn}){
+function Login({ setIsLoggedIn }) {
     const navigate = useNavigate();
 
     const [username, setUsername] = useState("");
@@ -16,53 +18,53 @@ function Login({setIsLoggedIn}){
         setError("");
         setLoading(true);
 
-        try{
+        try {
             const data = await login(username, password);
 
-            if(data.success){
+            if (data.success) {
                 setIsLoggedIn(true);
-
-                localStorage.setItem("user", JSON.stringify(data.username));
-
+                localStorage.setItem("user", JSON.stringify(data.user));
                 navigate("/");
-            }else{
-                setError(data.message);
+            } else {
+                setError(data.message || "Login fehlgeschlagen");
             }
-        }catch(error){
-            setError("Verbindung zum Server fehlgeschlagen")
+        } catch (error) {
+            setError("Verbindung zum Server fehlgeschlagen");
             console.error(error);
-        }finally{
+        } finally {
             setLoading(false);
         }
     }
 
-    return(
-            <div>
+    return (
+        <div className="auth-page page-bg">
+            <div className="auth-card">
                 <h1>Login</h1>
 
-                <form onSubmit={handleLogin}>
-                    <div>
+                <form className="auth-form" onSubmit={handleLogin}>
+                    <div className="auth-field">
                         <label>Benutzername</label>
-                        <br></br>
-                        <input type="text" value={username} onChange={(event) => setUsername(event.target.value)} required></input>
+                        <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required />
                     </div>
 
-                    <div>
+                    <div className="auth-field">
                         <label>Passwort</label>
-                        <br></br>
-                        <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} required></input>
+                        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
                     </div>
 
-                    {error && <p style={{color : "red"}}>{error}</p>}
+                    {error && <p className="auth-error">{error}</p>}
 
-                    <button type="submit" disabled={loading}>
-                        {loading ? "Wird eingeloggt " : "Einloggen"}
+                    <button className="auth-submit" type="submit" disabled={loading}>
+                        {loading ? "Wird eingeloggt…" : "Einloggen"}
                     </button>
                 </form>
-            </div>
-    );
 
+                <p className="auth-footer">
+                    Noch kein Konto? <Link to="/registration">Registrieren</Link>
+                </p>
+            </div>
+        </div>
+    );
 }
 
 export default Login;
-

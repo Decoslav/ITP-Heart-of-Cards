@@ -39,29 +39,29 @@ export async function logout() {
     return response.json();
 }
 
-export async function saveDeck(name, cards) {
-    const response = await fetch (baseURL + "saveDeck.php",{
-        method: "POST", 
-        headers: {"Content-Type" : "application/json"},
-        credentials : "include",
-        body : JSON.stringify({
-            name: name,
-            cards : cards.map((card) =>({
-
+export async function saveDeck(name, cards, deckId = null) {
+    const response = await fetch(baseURL + "saveDeck.php", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        credentials: "include",
+        body: JSON.stringify({
+            name,
+            deck_id: deckId,
+            cards: cards.map((card) => ({
                 name: card.name,
-                hp: card.name,
-                atk: card.atk
-            }))
-        })
+                hp:   card.hp,
+                atk:  card.atk,
+            })),
+        }),
     });
 
     return response.json();
 }
 
-export async function getSavedDeck() {
-    const response = await fetch(baseURL + "getDeck.php",{
+export async function getSavedDecks() {
+    const response = await fetch(baseURL + "getDeck.php", {
         method: "GET",
-        credentials: "include"
+        credentials: "include",
     });
 
     return response.json();

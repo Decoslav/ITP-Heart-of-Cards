@@ -1,0 +1,122 @@
+/* ============================================================
+   Shared styles – genutzt von Deckbuilder, Deck und Auth
+   ============================================================ */
+
+/* Dunkler Seiten-Hintergrund */
+.page-bg {
+  background:
+    radial-gradient(circle at top, rgba(137, 97, 255, 0.18), transparent 40%),
+    linear-gradient(180deg, #11131f 0%, #090a12 100%);
+  color: #f5f3ff;
+}
+
+/* Eyebrow-Label (lila Kleinschrift über Überschriften) */
+.eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  font-size: 0.75rem;
+  color: #a78bfa;
+}
+
+/* Deck-Auswahl-Karte (Preset / Gespeichert) */
+.preset-card {
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 20px;
+  padding: 20px;
+  text-align: left;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.03));
+  color: inherit;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.preset-card:hover,
+.preset-card.active {
+  transform: translateY(-4px);
+  border-color: rgba(167, 139, 250, 0.9);
+  box-shadow: 0 18px 32px rgba(0, 0, 0, 0.35);
+}
+
+.preset-card h2 {
+  margin: 8px 0;
+  font-size: 1.4rem;
+}
+
+.preset-card p {
+  margin: 0 0 18px;
+  color: rgba(245, 243, 255, 0.72);
+}
+
+.preset-label,
+.preset-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.preset-label {
+  background: rgba(167, 139, 250, 0.18);
+  color: #d8b4fe;
+}
+
+.preset-count {
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(245, 243, 255, 0.86);
+}
+
+/* Deck-Statistiken (HP / ATK / Kartenanzahl) */
+.deck-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.deck-stats span {
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(245, 243, 255, 0.9);
+}
+
+/* Section-Header mit Titel + Stats nebeneinander */
+.section-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: end;
+  gap: 16px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.section-top h2 {
+  margin: 6px 0 0;
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+}
+
+/* Karten-Grid (Deck-Vorschau & Pool) */
+.deck-card-grid,
+.pool-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 220px));
+  justify-content: center;
+  gap: 18px;
+  align-items: start;
+}
+
+.deck-card-grid .game-card,
+.pool-grid .game-card {
+  width: 100%;
+}
+
+@media (max-width: 700px) {
+  .deck-card-grid,
+  .pool-grid {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+}

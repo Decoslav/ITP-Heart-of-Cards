@@ -1,0 +1,74 @@
+/* Deck-spezifische Styles – gemeinsame Klassen in shared.css */
+
+.deck-page {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 100vh;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 28px;
+}
+
+.deck-hero {
+  max-width: 760px;
+  margin-inline: auto;
+  text-align: center;
+  padding-inline: 8px;
+}
+
+.deck-hero h1 {
+  margin: 8px 0 12px;
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  line-height: 1;
+}
+
+.deck-hero p {
+  color: rgba(245, 243, 255, 0.75);
+}
+
+.deck-selector {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+  max-width: 1100px;
+  margin-inline: auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.deck-detail {
+  max-width: 1100px;
+  margin-inline: auto;
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 28px;
+  padding: 24px;
+  background: rgba(10, 11, 18, 0.72);
+  backdrop-filter: blur(12px);
+}
+
+.deck-group {
+  max-width: 1100px;
+  margin-inline: auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.deck-hint {
+  color: rgba(245, 243, 255, 0.6);
+  text-align: center;
+  padding: 24px 0;
+}
+
+@media (max-width: 700px) {
+  .deck-page {
+    padding: 20px;
+  }
+
+  .deck-detail {
+    padding: 18px;
+  }
+}

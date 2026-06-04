@@ -1,16 +1,6 @@
-<?php 
+<?php
 session_start();
-
-header("Access-Control-Allow-Origin: http://localhost:5173");
-header("Access-Control-Allow-Credentials: true");
-header("Access-Control-Allow-Headers: Content-Type");
-header("Access-Control-Allow-Methods: POST, OPTIONS");
-header("Content-Type: application/json; charset=UTF-8");
-
-if($_SERVER["REQUEST_METHOD"] === "OPTIONS"){
-    exit;
-}
-
+include "cors.php";
 include "databaseAccess.php";
 
 if($_SERVER["REQUEST_METHOD"] !== "POST"){
@@ -62,7 +52,7 @@ if($stmt->num_rows === 0){
 $stmt->bind_result($db_id,$db_username, $db_password, $db_role);
 $stmt->fetch();
 
-if(!password_verify($password, $db_password)){
+if($db_password === null || !password_verify($password, $db_password)){
     $stmt->close();
 
     echo json_encode([

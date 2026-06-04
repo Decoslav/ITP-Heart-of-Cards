@@ -1,63 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import Card from '../components/Card';
 import './Deckbuilder.css';
-import { getSavedDeck, saveDeck } from '../api/apiService';
+import '../styles/shared.css';
+import { getSavedDecks, saveDeck } from '../api/apiService';
+import { ALL_CARDS, PRESET_DECKS, mapCardNamesToCards, hydrateSavedCards } from '../data/cards';
 
 const MAX_DECK_CARDS = 10;
-
-const ALL_CARDS = [
-
-  // TANKS
-  { name: "Knight", hp: 60, atk: 4, imageUrl: "/images/Knight.png", type: "tank", description: "A knight with a lionheart."},
-  { name: "Ice-Golem", hp: 50, atk: 4, imageUrl: "/images/IceGolem.png", type: "tank", description: "This golem was born in the first ice age."},
-  { name: "Sea-Guardian", hp: 40, atk: 6, imageUrl: "/images/SeaGuardian.png", type: "tank", description: "The guardian of Atlantis."},
-  { name: "Ender-Dragon", hp: 50, atk: 5, imageUrl: "/images/EnderDragon.png", type: "tank", description: "Ender of all dragons."},
-  { name: "King Slime", hp: 64, atk: 2, imageUrl: "/images/king_slime.png", type: "tank", description: "It ate enough material to become the king of all slimes."},
-  { name: "Stronghold", hp: 45, atk: 5, imageUrl: "/images/stronghold.png", type: "tank", description: "Created by a mad alchemist, it protects the kingdom from all enemies."},
-  { name: "Djinn", hp: 50, atk: 5, imageUrl: "/images/djinn.png", type: "tank", description: "Three wishes are granted for freeing the djinn from his prison."},
-
-  // DAMAGE
-  { name: "Bone-Warrior", hp: 10, atk: 20, imageUrl: "/images/BoneWarrior.png", type: "damage", description: "He forgot to die and keeps fighting."},
-  { name: "Ice-Mage", hp: 8, atk: 22, imageUrl: "/images/IceMage.png", type: "damage", description: "Absolute zero not only in theory."},
-  { name: "Goblin", hp: 20, atk: 10, imageUrl: "/images/Goblin.png", type: "damage", description: "An anomaly of the goblin kin, they don't read."},
-  { name: "Shadow-Ninja", hp: 12, atk: 18, imageUrl: "/images/ShadowNinja.png", type: "damage", description: "Mid gap."},
-  { name: "Summoner", hp: 15, atk: 15, imageUrl: "/images/Summoner.png", type: "damage", description: "Never alone."},
-  { name: "Sultan", hp: 14, atk: 16, imageUrl: "/images/sultan.png", type: "damage", description: "He spins to win his fights."},
-
-  // HYBRID
-  { name: "Fire-Dragon", hp: 25, atk: 8, imageUrl: "/images/FireDragon.png", type: "hybrid", description: "A dragon that burns all his enemies."},
-  { name: "Ice-Witch", hp: 20, atk: 5, imageUrl: "/images/IceWitch.png", type: "hybrid", description: "Ice cold spells and an ice cold heart."},
-  { name: "Gnome", hp: 30, atk: 4, imageUrl: "/images/Gnome.png", type: "hybrid", description: "After 1000 years he learned to control lightning."},
-  { name: "Thunderbird", hp: 22, atk: 12, imageUrl: "/images/ThunderBird.png", type: "hybrid", description: "In the east they call her 'Taifun', in the west 'Hurricane' and in the south 'Cyclone'."},
-  { name: "Phoenix", hp: 20, atk: 12, imageUrl: "/images/Phoenix.png", type: "hybrid", description: "Phoenix never dies."},
-  { name: "Bowser", hp: 30, atk: 7, imageUrl: "/images/Bowser.png", type: "hybrid", description: "His name is 'Cupcake' and he doesn't bite."},
-  { name: "Dragon Monk", hp: 24, atk: 10, imageUrl: "/images/dragon_monk.png", type: "hybrid", description: "After training Kung Fu everyday he mastered the dragon fist."},
-
-];
-
-const PRESET_DECKS = [
-  {
-    id: 'firestorm',
-    name: 'Feuersturm',
-    description: 'Schnell, aggressiv und auf hohen Schaden ausgelegt.',
-    cards: ['Fire-Dragon', 'Phoenix', 'Bone-Warrior', 'Goblin', 'Summoner', 'Shadow-Ninja', 'Bowser', 'Ice-Mage'],
-  },
-  {
-    id: 'frostguard',
-    name: 'Frostwache',
-    description: 'Viel Leben, stabile Frontline und sichere Kontrolle.',
-    cards: ['Knight', 'Ice-Golem', 'Sea-Guardian', 'Ice-Witch', 'Ice-Mage', 'Gnome', 'Thunderbird', 'Summoner'],
-  },
-  {
-    id: 'shadow',
-    name: 'Schattenpakt',
-    description: 'Flexibel, mystisch und mit starken Hybrid-Karten.',
-    cards: ['Ender-Dragon', 'Shadow-Ninja', 'Summoner', 'Ice-Witch', 'Fire-Dragon', 'Bowser', 'Phoenix', 'Gnome'],
-  },
-];
+const MAX_SAVED_DECKS = 3;
 
 const CARD_SECTIONS = [
-  { type: 'tank', title: '🛡️ Tanks' },
+  { type: 'tank',   title: '🛡️ Tanks'  },
   { type: 'damage', title: '⚔️ Damage' },
   { type: 'hybrid', title: '⚖️ Hybrid' },
 ];
@@ -66,192 +18,114 @@ function getPresetById(deckId) {
   return PRESET_DECKS.find((deck) => deck.id === deckId) ?? PRESET_DECKS[0];
 }
 
-function mapCardNamesToCards(cardNames) {
-  return cardNames
-    .map((cardName) => ALL_CARDS.find((card) => card.name === cardName))
-    .filter(Boolean);
-}
-
-//gespeicherte karten bekommen wieder ihre lokal gespeicherten bilder
-function hydrateSavedCards(cardsFromApi){
-  return cardsFromApi
-      .map((apiCard)=>{
-        const localCard = ALL_CARDS.find((card) => card.name === apiCard.name);
-
-        return localCard ??{
-          name: apiCard.name,
-          hp: apiCard.hp,
-          atk: apiCard. atk,
-          imageUrl: "",
-          type : "saved",
-          description: "Gespeicherte Karte."
-        };
-      })
-      .filter(Boolean);
-}
-
 function Deckbuilder() {
-
   const firstPreset = getPresetById(PRESET_DECKS[0].id);
+
   const [selectedDeckId, setSelectedDeckId] = useState(firstPreset.id);
-  const [deckName, setDeckName] = useState(firstPreset.name);
-  const [selectedCards, setSelectedCards] = useState(() => mapCardNamesToCards(firstPreset.cards));
-  const [statutsMessage, setStatusMessage] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedTypeFilter, setSelectedTypeFilter] = useState("all");
-  const [sortOption, setSortOption] = useState("name-asc");
-  const [minHpFilter, setMinHpFilter] = useState(0);
-  const [minAtkFilter, setMinAtkFilter] = useState(0);
+  const [deckName, setDeckName]             = useState(firstPreset.name);
+  const [selectedCards, setSelectedCards]   = useState(() => mapCardNamesToCards(firstPreset.cards));
+  const [statusMessage, setStatusMessage]   = useState('');
+  const [isSaving, setIsSaving]             = useState(false);
 
-  const selectedDeck = useMemo(() => {
-    const preset = getPresetById(selectedDeckId);
+  // Gespeicherte Decks des Users (max. 3)
+  const [savedDecks, setSavedDecks]         = useState([]);
+  // null = neues Deck, number = vorhandene deck_id überschreiben
+  const [saveTargetId, setSaveTargetId]     = useState(null);
 
-    return {
-      ...preset,
-      cards: mapCardNamesToCards(preset.cards),
-    };
-  }, [selectedDeckId]);
+  const [searchTerm, setSearchTerm]               = useState('');
+  const [selectedTypeFilter, setSelectedTypeFilter] = useState('all');
+  const [sortOption, setSortOption]               = useState('name-asc');
+  const [minHpFilter, setMinHpFilter]             = useState(0);
+  const [minAtkFilter, setMinAtkFilter]           = useState(0);
 
-  const filteredAndSortedCards = useMemo(() => {
-
-  let filteredCards = [...ALL_CARDS];
-
-  // Suche nach Name
-  if (searchTerm.trim() !== "") {
-    filteredCards = filteredCards.filter((card) =>
-      card.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
-  }
-
-  // Typfilter
-  if (selectedTypeFilter !== "all") {
-    filteredCards = filteredCards.filter(
-      (card) => card.type === selectedTypeFilter
-    );
-  }
-
-  // HP Filter
-  filteredCards = filteredCards.filter(
-    (card) => card.hp >= minHpFilter
-  );
-
-  // Angriff Filter
-  filteredCards = filteredCards.filter(
-    (card) => card.atk >= minAtkFilter
-  );
-
-  // Sortierung
-  switch (sortOption) {
-    case "name-asc":
-      filteredCards.sort((a, b) =>
-        a.name.localeCompare(b.name)
-      );
-      break;
-
-    case "hp-desc":
-      filteredCards.sort((a, b) => b.hp - a.hp);
-      break;
-
-    case "atk-desc":
-      filteredCards.sort((a, b) => b.atk - a.atk);
-      break;
-
-    default:
-      break;
-  }
-
-  return CARD_SECTIONS.map((section) => ({
-    ...section,
-    cards: filteredCards.filter(
-      (card) => card.type === section.type
-    ),
-  }));
-
-}, [
-  searchTerm,
-  selectedTypeFilter,
-  sortOption,
-  minHpFilter,
-  minAtkFilter,
-]);
-
-  const visibleDeckCards = selectedCards;
-
-  const totalHp = visibleDeckCards.reduce((sum, card) => sum + card.hp, 0);
-  const totalAtk = visibleDeckCards.reduce((sum, card) => sum + card.atk, 0);
-
+  // ── Gespeicherte Decks laden ─────────────────────────────────────────────
   useEffect(() => {
-    async function loadSavedDeck() {
-      const data = await getSavedDeck();
-
-      if(data.success && data.deck){
-        setDeckName(data.deck.name);
-        setSelectedCards(hydrateSavedCards(data.deck.cards));
-        setStatusMessage("Gespeichertes Deck löschen");
-      }else if(!data.success){
-        setStatusMessage(data.message);
+    async function loadDecks() {
+      const data = await getSavedDecks();
+      if (data.success && data.decks.length > 0) {
+        setSavedDecks(data.decks);
+        // Standard-Speicherziel: erstes vorhandenes Deck
+        setSaveTargetId(data.decks[0].id);
       }
     }
-
-    loadSavedDeck();
+    loadDecks().catch(() => {});
   }, []);
 
-  function handleAddCard(card) {
-    setSelectedCards((currentCards) => {
-        if(currentCards.length >= MAX_DECK_CARDS){
-          setStatusMessage("Ein Deck darf maximal 10 Karten enthalten");
-          return currentCards;
-        }
+  // ── Karten filtern & sortieren ───────────────────────────────────────────
+  const filteredAndSortedCards = useMemo(() => {
+    let cards = [...ALL_CARDS];
 
-        setStatusMessage("");
-        return [...currentCards, card];
+    if (searchTerm.trim())
+      cards = cards.filter(c => c.name.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    if (selectedTypeFilter !== 'all')
+      cards = cards.filter(c => c.type === selectedTypeFilter);
+
+    cards = cards.filter(c => c.hp >= minHpFilter && c.atk >= minAtkFilter);
+
+    switch (sortOption) {
+      case 'hp-desc':  cards.sort((a, b) => b.hp  - a.hp);  break;
+      case 'atk-desc': cards.sort((a, b) => b.atk - a.atk); break;
+      default:         cards.sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    return CARD_SECTIONS.map(s => ({ ...s, cards: cards.filter(c => c.type === s.type) }));
+  }, [searchTerm, selectedTypeFilter, sortOption, minHpFilter, minAtkFilter]);
+
+  const totalHp  = selectedCards.reduce((s, c) => s + c.hp,  0);
+  const totalAtk = selectedCards.reduce((s, c) => s + c.atk, 0);
+
+  function handleAddCard(card) {
+    setSelectedCards(cur => {
+      if (cur.length >= MAX_DECK_CARDS) {
+        setStatusMessage('Ein Deck darf maximal 10 Karten enthalten');
+        return cur;
+      }
+      setStatusMessage('');
+      return [...cur, card];
     });
   }
 
-  function handleRemoveCard(indexToRemove) {
-    setSelectedCards((currentCards) => currentCards.filter((_, index) => index !== indexToRemove));
+  function handleRemoveCard(idx) {
+    setSelectedCards(cur => cur.filter((_, i) => i !== idx));
   }
 
   function applyPresetDeck(deckId) {
     setSelectedDeckId(deckId);
-
     const preset = getPresetById(deckId);
-    const presetCards = mapCardNamesToCards(preset.cards);
-
     setDeckName(preset.name);
-    setSelectedCards(presetCards);
-    setStatusMessage("");
+    setSelectedCards(mapCardNamesToCards(preset.cards));
+    setStatusMessage('');
   }
 
   async function handleSaveDeck() {
-    
-    if(selectedCards.length === 0){
-      setStatusMessage("Wähle mindestens eine Karte aus");
-      return;
-    }
-
-    if(selectedCards.length > MAX_DECK_CARDS){
-      setStatusMessage("Ein Deck darf maximal 10 Karten haben");
-      return;
-    }
+    if (selectedCards.length === 0) { setStatusMessage('Wähle mindestens eine Karte aus'); return; }
+    if (selectedCards.length > MAX_DECK_CARDS) { setStatusMessage('Ein Deck darf maximal 10 Karten haben'); return; }
 
     setIsSaving(true);
-    setStatusMessage("");
+    setStatusMessage('');
 
-    const data= await saveDeck(deckName, selectedCards);
+    const data = await saveDeck(deckName, selectedCards, saveTargetId);
 
-    if(data.success){
-      setStatusMessage("Deck wurde gespeichert");
-    }else{
-      setStatusMessage("data.message");
+    if (data.success) {
+      setStatusMessage('Deck gespeichert ✓');
+      // Gespeicherte Decks neu laden damit die Auswahl aktuell bleibt
+      const updated = await getSavedDecks();
+      if (updated.success) {
+        setSavedDecks(updated.decks);
+        setSaveTargetId(data.deck_id);
+      }
+    } else {
+      setStatusMessage(data.message);
     }
 
     setIsSaving(false);
   }
 
+  const canCreateNew = savedDecks.length < MAX_SAVED_DECKS;
+
   return (
-    <div className="deckbuilder-page">
+    <div className="deckbuilder-page page-bg">
       <section className="deckbuilder-hero">
         <p className="eyebrow">Deckbuilder</p>
         <h1>Wähle ein vorgefertigtes Deck</h1>
@@ -281,21 +155,41 @@ function Deckbuilder() {
             <h2>{deckName}</h2>
           </div>
           <div className="deck-stats">
-            <span>{visibleDeckCards.length}/{MAX_DECK_CARDS} Karten</span>
+            <span>{selectedCards.length}/{MAX_DECK_CARDS} Karten</span>
             <span>{totalHp} HP</span>
             <span>{totalAtk} ATK</span>
           </div>
-          
-          <div>
-            <input type='text' value={deckName} maxLength={50} onChange={(event) => setDeckName(event.target.value)}placeholder='Deckname' />
-            <button type='button' onClick={handleSaveDeck} disabled={isSaving}>{isSaving ? "Speichert" : "Deck speichern" }</button>
+
+          <div className="save-controls">
+            <input
+              type="text"
+              value={deckName}
+              maxLength={50}
+              onChange={e => setDeckName(e.target.value)}
+              placeholder="Deckname"
+            />
+
+            <select
+              value={saveTargetId ?? 'new'}
+              onChange={e => setSaveTargetId(e.target.value === 'new' ? null : Number(e.target.value))}
+            >
+              {savedDecks.map(d => (
+                <option key={d.id} value={d.id}>Überschreiben: {d.name}</option>
+              ))}
+              {canCreateNew && <option value="new">+ Neues Deck erstellen</option>}
+              {!canCreateNew && savedDecks.length === 0 && <option value="new">+ Neues Deck erstellen</option>}
+            </select>
+
+            <button type="button" onClick={handleSaveDeck} disabled={isSaving}>
+              {isSaving ? 'Speichert…' : 'Deck speichern'}
+            </button>
           </div>
 
-          {statutsMessage && <p>{statutsMessage}</p>}
+          {statusMessage && <p className="status-message">{statusMessage}</p>}
         </div>
 
         <div className="deck-card-grid">
-          {visibleDeckCards.map((card, index) => (
+          {selectedCards.map((card, index) => (
             <Card
               key={`${card.name}-${index}`}
               {...card}
@@ -315,28 +209,21 @@ function Deckbuilder() {
         </div>
 
         <div className="filter-toolbar">
-
           <input
             type="text"
             placeholder="Karte suchen..."
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={e => setSearchTerm(e.target.value)}
           />
 
-          <select
-            value={selectedTypeFilter}
-            onChange={(e) => setSelectedTypeFilter(e.target.value)}
-          >
+          <select value={selectedTypeFilter} onChange={e => setSelectedTypeFilter(e.target.value)}>
             <option value="all">Alle Typen</option>
             <option value="tank">Tanks</option>
             <option value="damage">Damage</option>
             <option value="hybrid">Hybrid</option>
           </select>
 
-          <select
-            value={sortOption}
-            onChange={(e) => setSortOption(e.target.value)}
-          >
+          <select value={sortOption} onChange={e => setSortOption(e.target.value)}>
             <option value="name-asc">Name A-Z</option>
             <option value="hp-desc">HP absteigend</option>
             <option value="atk-desc">ATK absteigend</option>
@@ -344,41 +231,24 @@ function Deckbuilder() {
 
           <div className="number-filter">
             <label>Min HP</label>
-            <input
-              type="number"
-              value={minHpFilter}
-              onChange={(e) => setMinHpFilter(Number(e.target.value))}
-            />
+            <input type="number" value={minHpFilter} onChange={e => setMinHpFilter(Number(e.target.value))} />
           </div>
 
           <div className="number-filter">
             <label>Min ATK</label>
-            <input
-              type="number"
-              value={minAtkFilter}
-              onChange={(e) => setMinAtkFilter(Number(e.target.value))}
-            />
+            <input type="number" value={minAtkFilter} onChange={e => setMinAtkFilter(Number(e.target.value))} />
           </div>
 
-          <button
-            onClick={() => {
-              setSearchTerm("");
-              setSelectedTypeFilter("all");
-              setSortOption("name-asc");
-              setMinHpFilter(0);
-              setMinAtkFilter(0);
-            }}
-          >
+          <button onClick={() => { setSearchTerm(''); setSelectedTypeFilter('all'); setSortOption('name-asc'); setMinHpFilter(0); setMinAtkFilter(0); }}>
             Filter zurücksetzen
           </button>
-
         </div>
 
         {filteredAndSortedCards.map((section) => (
           <div className="pool-group" key={section.type}>
             <h3>{section.title}</h3>
             <div className="pool-grid">
-              {section.cards.map((card) => (
+              {section.cards.map(card => (
                 <Card key={card.name} {...card} onCardClick={() => handleAddCard(card)} />
               ))}
             </div>

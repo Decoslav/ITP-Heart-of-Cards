@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import {registration} from "../api/apiService";
+import { registration } from "../api/apiService";
+import "./Auth.css";
+import "../styles/shared.css";
 
-function Registration({setIsLoggedIn}){
+function Registration({ setIsLoggedIn }) {
     const navigate = useNavigate();
 
     const [email, setEmail] = useState("");
@@ -21,74 +23,75 @@ function Registration({setIsLoggedIn}){
         setError("");
         setLoading(true);
 
-        if(password !== passwordConfirm){
+        if (password !== passwordConfirm) {
             setError("Passwörter stimmen nicht überein");
             setLoading(false);
             return;
         }
 
-        try{
+        try {
             const data = await registration(email, username, password, passwordConfirm);
 
-            if(data.success){
+            if (data.success) {
                 setIsLoggedIn(true);
-
                 localStorage.setItem("user", JSON.stringify(data.user));
-
                 navigate("/");
-            }else{
-                setError(data.message);
+            } else {
+                if (data.errors && data.errors.length > 0) {
+                    setError(data.errors.join(" "));
+                } else {
+                    setError(data.message || "Registrierung fehlgeschlagen");
+                }
             }
-        }catch(error){
-            setError("Verbindung zum Server fehlgeschlagen")
+        } catch (error) {
+            setError("Verbindung zum Server fehlgeschlagen");
             console.error(error);
-        }finally{
+        } finally {
             setLoading(false);
         }
     }
 
-    return(
-            <div>
+    return (
+        <div className="auth-page page-bg">
+            <div className="auth-card">
                 <h1>Registrieren</h1>
 
-                <form onSubmit={handleRegistration}>
-                    <div>
+                <form className="auth-form" onSubmit={handleRegistration}>
+                    <div className="auth-field">
                         <label>Email</label>
-                        <br></br>
-                        <input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required></input>
+                        <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
                     </div>
 
-                    <div>
+                    <div className="auth-field">
                         <label>Benutzername</label>
-                        <br></br>
-                        <input type="text" value={username} onChange={(event) => setUsername(event.target.value)} required></input>
+                        <input type="text" value={username} onChange={(e) => setUsername(e.target.value)} required />
                     </div>
 
-                    <div>
+                    <div className="auth-field">
                         <label>Passwort</label>
-                        <br></br>
-                        <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} required></input>
+                        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} required />
+                        <small>Min. 8 Zeichen, 1 Großbuchstabe, 1 Zahl, 1 Sonderzeichen</small>
                     </div>
 
-                    <div>
+                    <div className="auth-field">
                         <label>Passwort bestätigen</label>
-                        <br></br>
-                        <input type="password" value={passwordConfirm} onChange={(event) => setPasswordConfirm(event.target.value)} required></input>
+                        <input type="password" value={passwordConfirm} onChange={(e) => setPasswordConfirm(e.target.value)} required />
                     </div>
 
-                    {error && <p style={{color : "red"}}>{error}</p>}
-                    {message && <p style={{color : "green"}}>{message}</p>}
+                    {error && <p className="auth-error">{error}</p>}
+                    {message && <p className="auth-success">{message}</p>}
 
-                    <button type="submit" disabled={loading}>
-                        {loading ? "Wird registriert " : "Registrieren"}
+                    <button className="auth-submit" type="submit" disabled={loading}>
+                        {loading ? "Wird registriert…" : "Registrieren"}
                     </button>
                 </form>
 
-                <p>Schon registriert? <Link to ="/login">Login</Link></p>
+                <p className="auth-footer">
+                    Schon registriert? <Link to="/login">Login</Link>
+                </p>
             </div>
+        </div>
     );
-
 }
 
 export default Registration;
-
