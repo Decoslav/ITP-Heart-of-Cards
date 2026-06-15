@@ -3,7 +3,13 @@ import Card from '../components/Card';
 import './Duellraum.css';
 
 function Duellraum() {
+  let DeckSize = 3;
+
   const [error, setError] = useState('');
+
+  //Spielmodus auswählen
+  const [gameMode, setGameMode]  = useState(null);        //wenn null, dann raumauswahl, wenn "player" gegen spieler lokal, wenn "computer" gegen bot
+
   
   // Runden-Verwaltung
   const [activePlayer, setActivePlayer] = useState(1); // 1 = Unten, 2 = Oben
@@ -21,50 +27,103 @@ function Duellraum() {
   const [field2, setField2] = useState([]);
   const [grave2, setGrave2] = useState([]);
 
-  // Beide Decks unabhängig voneinander aus demselben gewählten Deck laden & mischen
+  function resetGameState()
+  {
+    setError ("");
+    setActivePlayer(1);
+    setIsTransitioning(false);
+
+    setDeck1([]);
+    setHand1([])
+    setField1([]);
+    setGrave1([]);
+
+    setDeck2([]);
+    setHand2([]);
+    setField2([]);
+    setGrave2([]);
+  }
+
+  function chooseRoom(mode)
+  {
+    resetGameState();
+    setGameMode(mode);
+  }
+
   useEffect(() => {
-    const savedDeck = localStorage.getItem('active_duel_deck');
-    if (!savedDeck) {
-      setError('Kein Deck gefunden! Erstelle zuerst ein Deck im Deckbuilder.');
+
+    if(!gameMode)
+    {
       return;
     }
 
-    const parsedCards = JSON.parse(savedDeck);
-    if (parsedCards.length === 0) {
-      setError('Dein ausgewähltes Deck ist leer. Pack zuerst Karten hinein!');
+    const savedDeck = localStorage.getItem("active_duel_deck");
+
+    if(!savedDeck)
+    {
+      setError("Kein Deck gefunden");
       return;
     }
 
-    // Funktion zum Mischen
-    const shuffle = (array) => {
+    let parsedCards;
+    try{
+      parsedCards = JSON.parse(savedDeck);
+    }catch
+    {
+      setError("Dein Ausgewähltes Deck ist leer");
+      return;
+    }
+
+    if(!parsedCards || parsedCards.length === 0)
+    {
+      setError("Dein Ausgewähltes Deck ist leer");
+      return;
+    }
+
+    const shuffle = (array) =>
+    {
       const shuffled = [...array];
-      for (let i = shuffled.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
+
+      for(let i = shuffled.length -1; i > 0 ; i-- )
+      {
+        const j = Math.floor(Math.random()* (i+1));
+        
         [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
       }
+
       return shuffled;
     };
+  
 
     const s1 = shuffle(parsedCards);
     const s2 = shuffle(parsedCards);
 
     // Spieler 1 Setup
-    setHand1(s1.slice(0, 3));
-    setDeck1(s1.slice(3));
+    setHand1(s1.slice(0, DeckSize));
+    setDeck1(s1.slice(DeckSize));
 
     // Spieler 2 Setup
-    setHand2(s2.slice(0, 3));
-    setDeck2(s2.slice(3));
-  }, []);
+    setHand2(s2.slice(0, DeckSize));
+    setDeck2(s2.slice(DeckSize));
+  }, [gameMode]);
 
   // Karte ziehen (Nur für den aktiven Spieler)
   function drawCard() {
     if (activePlayer === 1) {
-      if (deck1.length === 0) return alert('Dein Nachziehstapel ist leer!');
+      if (deck1.length === 0) 
+        {
+          return alert('Dein Nachziehstapel ist leer!');
+        }
+
       setHand1([...hand1, deck1[0]]);
       setDeck1(deck1.slice(1));
+
     } else {
-      if (deck2.length === 0) return alert('Dein Nachziehstapel ist leer!');
+      if (deck2.length === 0)
+        {
+          return alert('Dein Nachziehstapel ist leer!');
+        }
+
       setHand2([...hand2, deck2[0]]);
       setDeck2(deck2.slice(1));
     }
@@ -72,18 +131,46 @@ function Duellraum() {
 
   // Karte ausspielen (Nur für den aktiven Spieler)
   function playCard(index) {
+
+    if(gameMode ==="computer" && activePlayer ===2)
+    {
+      return;
+    }
+
     if (activePlayer === 1) {
       setField1([...field1, hand1[index]]);
       setHand1(hand1.filter((_, i) => i !== index));
+
     } else {
       setField2([...field2, hand2[index]]);
       setHand2(hand2.filter((_, i) => i !== index));
     }
   }
 
+  //Hier Computer Logik aus PHP?
+
   // Zug beenden & Bildschirm wechseln
   function endTurn() {
     setIsTransitioning(true);
+  }
+
+  function performComputerTurn()
+  {
+    //hier irgendwas vom server oder so
+  }
+
+  function getCurrentPlayerName()
+  {
+    if(activePlayer === 1 )
+    {
+      return "Spieler 1";
+    }
+    if(gameMode === "computer")
+    {
+      return "Computer";
+    }
+
+    return "Spieler 2";
   }
 
   function confirmNextTurn() {
@@ -91,17 +178,69 @@ function Duellraum() {
     setIsTransitioning(false);
   }
 
-  if (error) {
+  if (!gameMode) {
     return (
-      <div className="duellraum-page error-state">
-        <h2>⚠️ Hoppla!</h2>
+      <div className="duellraum-page lobby-page">
+        <div className='duel-lobby'>
+
+          <p className='duell-lobby'> Duellraum </p>
+
+          <h1> Wähle einen Raum</h1>
+
+          <p className = "lobby-subtitle">Entscheide, ob du gegen einen BOT oder gegen deinen Freund spielen willst.</p>
+        
+        
+          <div className='room-grid'>
+            <button className='room-card' onClick={() => chooseRoom("player")}>
+              <span className='room-icon'> ⚔️ </span>
+              <h2>Gegeneinander</h2>
+              <p> Zwei Spieler am selben Gerät</p>
+              <span className='room-status'> 2-Spieler-Raum</span>
+            </button>
+
+            <button className='room-card' onClick={() => chooseRoom("computer")}>
+              <span className='room-icon'> 🤖 </span>
+              <h2>Gegen BOT</h2>
+              <p> Du spielst gegen einen Computer</p>
+              <span className='room-status'> 2-Spieler-Raum</span>
+            </button>
+
+
+
+          </div>
+        </div> 
+      </div>
+    );
+  }
+
+  if(error){
+    return(
+      <div className='duellraum-page error-state'>
+        <h2>Hoppala, ein Fehler!</h2>
         <p>{error}</p>
+
+        <button className='turn-btn confirm-btn' onClick={() => setGameMode(null)}> Zurück zur Raumauswahl</button> 
+      
       </div>
     );
   }
 
   // Sichtschutz-Overlay bei Spielerwechsel (Spionage-Schutz)
   if (isTransitioning) {
+
+    if(gameMode === "computer")
+    {
+      return(
+        <div className='duellraum-page transition-screen'>
+          <div className='transition-card'>
+            <h2> Computer ist am Zug</h2>
+            <p>Der Computer zieht eine Karte und spielt.</p>
+          </div>
+        </div>
+      );
+    }
+
+
     return (
       <div className="duellraum-page transition-screen">
         <div className="transition-card">
@@ -125,7 +264,7 @@ function Duellraum() {
             
             {/* SPIELER 2 HAND (Verdeckt, wenn S1 am Zug ist) */}
             <div className="hand-zone enemy-hand">
-              {activePlayer === 2 ? (
+              {activePlayer === 2 && gameMode === "player" ? (
                 hand2.map((card, index) => (
                   <div key={`p2-hand-${index}`} className="mini-card-wrapper click-play" onClick={() => playCard(index)}>
                     <Card {...card} />
@@ -161,10 +300,10 @@ function Duellraum() {
               <span className="count">{grave2.length}</span>
               <p>Friedhof</p>
             </div>
-            <div className={`mini-pile deck secondary ${activePlayer === 2 ? 'active-pull' : ''}`} onClick={activePlayer === 2 ? drawCard : undefined}>
+            <div className={`mini-pile deck secondary ${activePlayer === 2 && gameMode === "player" ? 'active-pull' : ''}`} onClick={activePlayer === 2 && gameMode === "player" ? drawCard : undefined}>
               <span className="count">{deck2.length}</span>
               <p>Stapel</p>
-              {activePlayer === 2 && deck2.length > 0 && <span className="action-tag">Zieh</span>}
+              {activePlayer === 2 && gameMode === "player" && deck2.length > 0 && <span className="action-tag">Zieh</span>}
             </div>
           </aside>
         </section>
@@ -174,8 +313,13 @@ function Duellraum() {
         <div className="arena-divider">
           <div className="divider-line"></div>
           <button className="turn-btn end-turn-btn" onClick={endTurn}>
-            ⚔️ Zug von Spieler {activePlayer} beenden
+            ⚔️ Zug von Spieler {getCurrentPlayerName()} beenden
           </button>
+
+          <button className='turn-btn room-back-btn' onClick={() => setGameMode(null)}>
+                Raum Verlassen
+          </button>
+
           <div className="divider-line"></div>
         </div>
 
