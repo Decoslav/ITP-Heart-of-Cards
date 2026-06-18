@@ -1,11 +1,14 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Card from '../components/Card';
 import './Duellraum.css';
+import { createDuelGame, drawDuelCard, playDuelCard,
+        endDuelTurn, leaveDuelGame } from "../api/apiService";
 
 function Duellraum() {
-  let DeckSize = 3;
+  const DeckSize = 3;
 
   const [error, setError] = useState('');
+  const [gameId, setGameId] = useState(null);
 
   //Spielmodus auswählen
   const [gameMode, setGameMode]  = useState(null);        //wenn null, dann raumauswahl, wenn "player" gegen spieler lokal, wenn "computer" gegen bot
@@ -44,20 +47,27 @@ function Duellraum() {
     setGrave2([]);
   }
 
-  function chooseRoom(mode)
+  function applyGameState(game)
   {
-    resetGameState();
-    setGameMode(mode);
+    setActivePlayer(game.activePlayer);
+
+    setDeck1(game.players["1"].deck);
+    setHand1(game.players["1"].hand)
+    setField1(game.players["1"].field);
+    setGrave1(game.players["1"].grave);
+
+    setDeck2(game.players["2"].deck);
+    setHand2(game.players["2"].hand);
+    setField2(game.players["2"].field);
+    setGrave2(game.players["2"].grave);
+
   }
 
-  useEffect(() => {
-
-    if(!gameMode)
-    {
-      return;
-    }
-
-    const savedDeck = localStorage.getItem("active_duel_deck");
+  async function chooseRoom(mode)
+  {
+    resetGameState();
+    
+    const savedDeck= localStorage.getItem("active_duel_deck");
 
     if(!savedDeck)
     {
@@ -65,100 +75,103 @@ function Duellraum() {
       return;
     }
 
-    let parsedCards;
+    let parsedDeck;
+
     try{
-      parsedCards = JSON.parse(savedDeck);
+      parsedDeck = JSON.parse(savedDeck);
     }catch
     {
-      setError("Dein Ausgewähltes Deck ist leer");
+      setError("Dein Deck konnte nicht geladen werden");
       return;
     }
 
-    if(!parsedCards || parsedCards.length === 0)
-    {
-      setError("Dein Ausgewähltes Deck ist leer");
+    if(!parsedDeck ||parsedDeck.length === 0){
+      
+      setError("Das Deck ist leer");
       return;
     }
 
-    const shuffle = (array) =>
-    {
-      const shuffled = [...array];
+    const data = await createDuelGame(mode, parsedDeck, DeckSize);
 
-      for(let i = shuffled.length -1; i > 0 ; i-- )
-      {
-        const j = Math.floor(Math.random()* (i+1));
-        
-        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-      }
+    if(!data.success){
+      
+      setError(data.message);
+      return;
+    }
 
-      return shuffled;
-    };
+    setGameMode(mode);
+    setGameId(data.gameId);
+    applyGameState(data.game);
+
+  }
+ 
   
 
-    const s1 = shuffle(parsedCards);
-    const s2 = shuffle(parsedCards);
-
-    // Spieler 1 Setup
-    setHand1(s1.slice(0, DeckSize));
-    setDeck1(s1.slice(DeckSize));
-
-    // Spieler 2 Setup
-    setHand2(s2.slice(0, DeckSize));
-    setDeck2(s2.slice(DeckSize));
-  }, [gameMode]);
-
   // Karte ziehen (Nur für den aktiven Spieler)
-  function drawCard() {
-    if (activePlayer === 1) {
-      if (deck1.length === 0) 
-        {
-          return alert('Dein Nachziehstapel ist leer!');
-        }
-
-      setHand1([...hand1, deck1[0]]);
-      setDeck1(deck1.slice(1));
-
-    } else {
-      if (deck2.length === 0)
-        {
-          return alert('Dein Nachziehstapel ist leer!');
-        }
-
-      setHand2([...hand2, deck2[0]]);
-      setDeck2(deck2.slice(1));
+  async function drawCard() {
+    
+    if(gameMode === "computer" && activePlayer === 2)
+    {
+      return;
     }
+
+    const data = await drawDuelCard();
+
+    if(!data.success){
+      alert(data.message);
+      return;
+    }
+
+    applyGameState(data.game);
+
   }
 
   // Karte ausspielen (Nur für den aktiven Spieler)
-  function playCard(index) {
+  async function playCard(index) {
 
-    if(gameMode ==="computer" && activePlayer ===2)
-    {
+    if(gameMode === "computer" && activePlayer === 2){
       return;
     }
 
-    if (activePlayer === 1) {
-      setField1([...field1, hand1[index]]);
-      setHand1(hand1.filter((_, i) => i !== index));
+    const data = await playDuelCard(index);
 
-    } else {
-      setField2([...field2, hand2[index]]);
-      setHand2(hand2.filter((_, i) => i !== index));
+    if(!data.success){
+      alert(data.message);
+      return;
     }
+
+    applyGameState(data.game);
+
   }
 
   //Hier Computer Logik aus PHP?
 
   // Zug beenden & Bildschirm wechseln
-  function endTurn() {
+  async function endTurn() {
+    
+    if(gameMode === "player"){
+      setIsTransitioning(true);
+      return;
+    }
+
     setIsTransitioning(true);
+
+    const data = await endDuelTurn();
+
+    if(!data.success){
+      setIsTransitioning(false);
+      alert(data.message);
+      return;
+    }
+
+    setTimeout(() => {
+      applyGameState(data.game);
+      setIsTransitioning(false);
+    }, 800);
+
   }
 
-  function performComputerTurn()
-  {
-    //hier irgendwas vom server oder so
-  }
-
+  
   function getCurrentPlayerName()
   {
     if(activePlayer === 1 )
@@ -173,9 +186,40 @@ function Duellraum() {
     return "Spieler 2";
   }
 
-  function confirmNextTurn() {
-    setActivePlayer(activePlayer === 1 ? 2 : 1);
+  async function confirmNextTurn() {
+    
+    const data = await endDuelTurn();
+
+    if(!data.success){
+      setIsTransitioning(false);
+      alert(data.message);
+      return;
+    }
+
+    applyGameState (data.game);
     setIsTransitioning(false);
+
+  }
+
+  async function leaveRoom() {
+    
+    await leaveDuelGame();
+
+    resetGameState();
+    setGameId(null);
+    setGameMode(null);
+  }
+
+  if(error){
+    return(
+      <div className='duellraum-page error-state'>
+        <h2>Hoppala, ein Fehler!</h2>
+        <p>{error}</p>
+
+        <button className='turn-btn confirm-btn' onClick={() => setGameMode(null)}> Zurück zur Raumauswahl</button> 
+      
+      </div>
+    );
   }
 
   if (!gameMode) {
@@ -183,7 +227,7 @@ function Duellraum() {
       <div className="duellraum-page lobby-page">
         <div className='duel-lobby'>
 
-          <p className='duell-lobby'> Duellraum </p>
+          <p className='duell-kicker'> Duellraum </p>
 
           <h1> Wähle einen Raum</h1>
 
@@ -202,7 +246,7 @@ function Duellraum() {
               <span className='room-icon'> 🤖 </span>
               <h2>Gegen BOT</h2>
               <p> Du spielst gegen einen Computer</p>
-              <span className='room-status'> 2-Spieler-Raum</span>
+              <span className='room-status'> Einzelspieler-Raum</span>
             </button>
 
 
@@ -213,17 +257,6 @@ function Duellraum() {
     );
   }
 
-  if(error){
-    return(
-      <div className='duellraum-page error-state'>
-        <h2>Hoppala, ein Fehler!</h2>
-        <p>{error}</p>
-
-        <button className='turn-btn confirm-btn' onClick={() => setGameMode(null)}> Zurück zur Raumauswahl</button> 
-      
-      </div>
-    );
-  }
 
   // Sichtschutz-Overlay bei Spielerwechsel (Spionage-Schutz)
   if (isTransitioning) {
@@ -313,10 +346,10 @@ function Duellraum() {
         <div className="arena-divider">
           <div className="divider-line"></div>
           <button className="turn-btn end-turn-btn" onClick={endTurn}>
-            ⚔️ Zug von Spieler {getCurrentPlayerName()} beenden
+            ⚔️ Zug von {getCurrentPlayerName()} beenden
           </button>
 
-          <button className='turn-btn room-back-btn' onClick={() => setGameMode(null)}>
+          <button className='turn-btn room-back-btn' onClick={leaveRoom}>
                 Raum Verlassen
           </button>
 

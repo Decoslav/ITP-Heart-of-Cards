@@ -66,3 +66,82 @@ export async function getSavedDecks() {
 
     return response.json();
 }
+
+export async function createDuelGame(mode, deck, deckSize){
+
+    const formData = new FormData();
+
+    formData.append("action" , "createGame");
+    formData.append("mode", mode);
+    formData.append("deck", JSON.stringify(deck));
+    formData.append("deckSize", deckSize);
+
+    const response = await fetch(baseURL+ "game.php", {
+        method: "POST",
+        body: formData,
+        credentials: "include"
+    });
+
+    return response.json();
+}
+
+export async function drawDuelCard() {
+    
+    const formData = new FormData();
+    formData.append("action", "drawCard");
+
+    const response = await fetch(baseURL + "game.php", {
+        method: "POST",
+        body: formData, 
+        credentials: "include"
+        
+    });
+
+    return response.json();
+}
+
+export async function playDuelCard(cardIndex) {
+
+    const formData = new FormData();
+    formData.append("action", "playCard");
+    formData.append("cardIndex", cardIndex);
+
+    const response = await fetch(baseURL + "game.php", {
+        method: "POST",
+        body: formData, 
+        credentials: "include"
+        
+    });
+
+    return response.json();
+    
+}
+
+export async function endDuelTurn(){
+
+    const formData = new FormData();
+    formData.append("action", "endTurn");
+
+    const response = await fetch(baseURL+ "game.php", {
+        method: "POST",
+        body: formData,
+        credentials: "include"
+    });
+
+    return response.json();
+}
+
+export async function leaveDuelGame() {
+
+    const formData = new FormData();
+    formData.append("action" , "leaveGame");
+
+    const response = await fetch(baseURL+ "game.php", {
+        method: "POST",
+        body: formData,
+        credentials: "include"
+    });
+
+    return response.json();
+    
+}
