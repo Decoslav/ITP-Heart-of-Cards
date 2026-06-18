@@ -4,14 +4,24 @@ include "cors.php";
 include "databaseAccess.php";
 
 if($_SERVER["REQUEST_METHOD"] !== "GET"){
+    
     http_response_code(405);
-    echo json_encode(["success" => false, "message" => "Nur GET-Anfragen erlaubt"]);
+    echo json_encode([
+        "success" => false,
+        "message" => "Nur GET-Anfragen erlaubt"
+    ]);
+
     exit;
 }
 
 if(!isset($_SESSION["loggedin"]) || $_SESSION["loggedin"] !== true || !isset($_SESSION["user_id"])){
+    
     http_response_code(401);
-    echo json_encode(["success" => false, "decks" => []]);
+    echo json_encode([
+        "success" => false,
+        "decks" => []
+    ]);
+
     exit;
 }
 
@@ -30,7 +40,10 @@ while($stmt->fetch()){
 $stmt->close();
 
 if(empty($deckList)){
-    echo json_encode(["success" => true, "decks" => []]);
+    echo json_encode([
+        "success" => true,
+        "decks" => []
+    ]);
     exit;
 }
 
@@ -68,4 +81,7 @@ foreach($deckList as $deck){
     ];
 }
 
-echo json_encode(["success" => true, "decks" => $decks]);
+echo json_encode([
+    "success" => true,
+    "decks" => $decks
+]);
