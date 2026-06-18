@@ -12,6 +12,7 @@
   transition: transform 0.2s, box-shadow 0.2s;
   cursor: pointer;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  position: relative; /* Wichtig für das schwebende Taunt-Schildchen */
 }
 
 .game-card:hover {
@@ -39,6 +40,18 @@
   font-size: 0.8rem;
 }
 
+/* ── 1. ERWEITERUNG: BADGE FÜR SPELLS ── */
+.spell-badge {
+  background-color: #a855f7;
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: bold;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 5px rgba(168, 85, 247, 0.6);
+}
+
 .card-image-container {
   width: 100%;
   height: 160px;
@@ -55,6 +68,10 @@
   width: 100%;
   height: 100%;
   object-fit: cover; /* Verhindert Verzerrung */
+}
+
+.card-placeholder {
+  font-size: 2.5rem;
 }
 
 .card-body {
@@ -93,4 +110,43 @@
 .stat-value {
   font-weight: bold;
   font-size: 1.1rem;
+}
+
+/* ── 2. ERWEITERUNG: SPECIAL LOOK FÜR SPELL-KARTEN ── */
+.game-card.type-spell {
+  border-color: #a855f7; /* Magisches Lila */
+  background: linear-gradient(135deg, #1e1b4b, #2e1065);
+  box-shadow: 0 8px 16px rgba(168, 85, 247, 0.2);
+}
+
+.game-card.type-spell:hover {
+  box-shadow: 0 12px 24px rgba(168, 85, 247, 0.4);
+}
+
+/* ── 3. ERWEITERUNG: SPECIAL LOOK & SCHILD FÜR TANK-KARTEN (TAUNT) ── */
+.game-card.type-tank {
+  border-color: #eab308; /* Kräftiges Tank-Gold */
+  box-shadow: 0 8px 16px rgba(234, 179, 8, 0.2);
+}
+
+.game-card.type-tank:hover {
+  box-shadow: 0 12px 24px rgba(234, 179, 8, 0.5);
+}
+
+/* Das kleine "🛡️ TAUNT" Abzeichen, das oben auf der Karte schwebt */
+.game-card.type-tank::before {
+  content: "🛡️ TAUNT";
+  position: absolute;
+  top: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #eab308;
+  color: #000;
+  font-size: 0.65rem;
+  font-weight: bold;
+  padding: 2px 8px;
+  border-radius: 4px;
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  letter-spacing: 0.5px;
 }
