@@ -1,5 +1,4 @@
 export const ALL_CARDS = [
-
   // TANKS
   { name: "Knight",       hp: 60, atk: 4,  imageUrl: "/images/Knight.png",      type: "tank",   description: "A knight with a lionheart." },
   { name: "Ice-Golem",    hp: 50, atk: 4,  imageUrl: "/images/IceGolem.png",    type: "tank",   description: "This golem was born in the first ice age." },
@@ -11,7 +10,7 @@ export const ALL_CARDS = [
 
   // DAMAGE
   { name: "Bone-Warrior", hp: 10, atk: 20, imageUrl: "/images/BoneWarrior.png", type: "damage", description: "He forgot to die and keeps fighting." },
-  { name: "Ice-Mage",     hp: 8,  atk: 22, imageUrl: "/images/IceMage.png",     type: "damage", description: "Absolute zero not only in theory." },
+  { name: "Ice-Mage",     hp: 8,  atk: 22, imageUrl: "./images/IceMage.png",     type: "damage", description: "Absolute zero not only in theory." },
   { name: "Goblin",       hp: 20, atk: 10, imageUrl: "/images/Goblin.png",      type: "damage", description: "An anomaly of the goblin kin, they don't read." },
   { name: "Shadow-Ninja", hp: 12, atk: 18, imageUrl: "/images/ShadowNinja.png", type: "damage", description: "Mid gap." },
   { name: "Summoner",     hp: 15, atk: 15, imageUrl: "/images/Summoner.png",    type: "damage", description: "Never alone." },
@@ -25,6 +24,10 @@ export const ALL_CARDS = [
   { name: "Phoenix",      hp: 20, atk: 12, imageUrl: "/images/Phoenix.png",     type: "hybrid", description: "Phoenix never dies." },
   { name: "Bowser",       hp: 30, atk: 7,  imageUrl: "/images/Bowser.png",      type: "hybrid", description: "His name is 'Cupcake' and he doesn't bite." },
   { name: "Dragon Monk",  hp: 24, atk: 10, imageUrl: "/images/dragon_monk.png", type: "hybrid", description: "After training Kung Fu everyday he mastered the dragon fist." },
+
+  // SPELLS (NEU!)
+  { name: "Holy Heal",    hp: 0,  atk: 5,  imageUrl: "/images/HolyHeal.png",    type: "spell",  description: "Heals all your units on the board.", effect: "heal_all" },
+  { name: "Fireball",     hp: 0,  atk: 12,  imageUrl: "/images/Fireball.png",    type: "spell",  description: "Deals 12 damage to one enemy unit.", effect: "damage_single" }
 ];
 
 export const PRESET_DECKS = [

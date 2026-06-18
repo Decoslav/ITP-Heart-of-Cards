@@ -10,13 +10,19 @@ function Duellraum() {
   const [error, setError] = useState('');
   const [gameId, setGameId] = useState(null);
 
-  //Spielmodus auswählen
-  const [gameMode, setGameMode]  = useState(null);        //wenn null, dann raumauswahl, wenn "player" gegen spieler lokal, wenn "computer" gegen bot
+  // Spielmodus auswählen: null = Raumauswahl, "player" = Lokal gegen Spieler, "computer" = Gegen Bot
+  const [gameMode, setGameMode] = useState(null); 
 
-  
   // Runden-Verwaltung
   const [activePlayer, setActivePlayer] = useState(1); // 1 = Unten, 2 = Oben
-  const [isTransitioning, setIsTransitioning] = useState(false); // Verdeckt den Screen beim Wechsel
+  const [isTransitioning, setIsTransitioning] = useState(false);
+
+  // Lebenspunkte der Spieler (Helden)
+  const [player1Hp, setPlayer1Hp] = useState(30);
+  const [player2Hp, setPlayer2Hp] = useState(30);
+
+  // Kampf-Zustand: Speichert den Index der Karte, die gerade angreifen will
+  const [selectedAttackerIdx, setSelectedAttackerIdx] = useState(null);
 
   // Zustand für Spieler 1 (Unten)
   const [deck1, setDeck1] = useState([]);
@@ -260,28 +266,24 @@ function Duellraum() {
 
   // Sichtschutz-Overlay bei Spielerwechsel (Spionage-Schutz)
   if (isTransitioning) {
-
-    if(gameMode === "computer")
-    {
-      return(
+    if (gameMode === "computer" && activePlayer === 1) {
+      // Wenn Spieler 1 beendet, ist der PC direkt dran ohne Klick-Zwang
+      return (
         <div className='duellraum-page transition-screen'>
           <div className='transition-card'>
-            <h2> Computer ist am Zug</h2>
-            <p>Der Computer zieht eine Karte und spielt.</p>
+            <h2>🤖 Computer ist am Zug...</h2>
+            <button className="turn-btn confirm-btn" onClick={confirmNextTurn}>Zug starten</button>
           </div>
         </div>
       );
     }
 
-
     return (
       <div className="duellraum-page transition-screen">
         <div className="transition-card">
-          <h2>Spieler {activePlayer === 1 ? '1' : '2'} hat seinen Zug beendet!</h2>
-          <p>Übergib den Computer an <strong>Spieler {activePlayer === 1 ? '2' : '1'}</strong>.</p>
-          <button className="turn-btn confirm-btn" onClick={confirmNextTurn}>
-            Ich bin Spieler {activePlayer === 1 ? '2' : '1'} (Hand anzeigen)
-          </button>
+          <h2>Spieler {activePlayer === 1 ? '1' : '2'} beendet den Zug!</h2>
+          <p>Übergib an <strong>Spieler {activePlayer === 1 ? '2' : '1'}</strong>.</p>
+          <button className="turn-btn confirm-btn" onClick={confirmNextTurn}>Hand anzeigen</button>
         </div>
       </div>
     );
@@ -294,8 +296,6 @@ function Duellraum() {
         {/* ================= SPIELER 2 HÄLFTE (OBEN) ================= */}
         <section className={`player-side enemy-side ${activePlayer === 2 ? 'active-glow' : 'inactive-dark'}`}>
           <div className="side-main">
-            
-            {/* SPIELER 2 HAND (Verdeckt, wenn S1 am Zug ist) */}
             <div className="hand-zone enemy-hand">
               {activePlayer === 2 && gameMode === "player" ? (
                 hand2.map((card, index) => (
@@ -306,43 +306,41 @@ function Duellraum() {
                 ))
               ) : (
                 Array.from({ length: hand2.length }).map((_, i) => (
-                  <div key={`p2-back-${i}`} className="card-back-dummy">
-                    <div className="card-back-pattern">🔮</div>
-                  </div>
+                  <div key={`p2-back-${i}`} className="card-back-dummy"><div className="card-back-pattern">🔮</div></div>
                 ))
               )}
-              {hand2.length === 0 && <p className="empty-hand-hint">Keine Karten auf der Hand.</p>}
             </div>
 
-            {/* SPIELER 2 SPIELFELD */}
             <div className="field-zone enemy-field">
+              <button 
+                className={`hero-hp-btn ${selectedAttackerIdx !== null && activePlayer === 1 ? 'targetable' : ''}`}
+                onClick={() => activePlayer === 1 && handleAttack(null, true)}
+              >
+                👑 {gameMode === 'computer' ? 'Computer' : 'Spieler 2'} HP: {player2Hp}
+              </button>
               <div className="field-grid">
                 {field2.map((card, index) => (
-                  <div key={`p2-field-${index}`} className="mini-card-wrapper">
+                  <div 
+                    key={`p2-field-${index}`} 
+                    className={`mini-card-wrapper ${activePlayer === 2 ? 'attacker' : 'target'} ${selectedAttackerIdx === index && activePlayer === 2 ? 'selected-atk' : ''}`}
+                    onClick={() => activePlayer === 2 ? selectAttacker(index) : handleAttack(index, false)}
+                  >
                     <Card {...card} />
                   </div>
                 ))}
-                {field2.length === 0 && <span className="zone-label-bg">Spieler 2 Kampfzone</span>}
               </div>
             </div>
           </div>
 
-          {/* SPIELER 2 SYSTEME (LINKS) */}
           <aside className="side-system enemy-system">
-            <div className="mini-pile graveyard empty">
-              <span className="count">{grave2.length}</span>
-              <p>Friedhof</p>
-            </div>
-            <div className={`mini-pile deck secondary ${activePlayer === 2 && gameMode === "player" ? 'active-pull' : ''}`} onClick={activePlayer === 2 && gameMode === "player" ? drawCard : undefined}>
-              <span className="count">{deck2.length}</span>
-              <p>Stapel</p>
-              {activePlayer === 2 && gameMode === "player" && deck2.length > 0 && <span className="action-tag">Zieh</span>}
+            <div className={`mini-pile graveyard ${grave2.length > 0 ? '' : 'empty'}`}><span className="count">{grave2.length}</span><p>Friedhof</p></div>
+            <div className={`mini-pile deck secondary ${activePlayer === 2 && gameMode === 'player' ? 'active-pull' : ''}`} onClick={activePlayer === 2 && gameMode === 'player' ? drawCard : undefined}>
+              <span className="count">{deck2.length}</span><p>Stapel</p>
             </div>
           </aside>
         </section>
 
-
-        {/* ================= MITTELBAR MIT PHASEN-CONTROLS ================= */}
+        {/* ================= MITTE (PHASEN-CONTROLS) ================= */}
         <div className="arena-divider">
           <div className="divider-line"></div>
           <button className="turn-btn end-turn-btn" onClick={endTurn}>
@@ -356,36 +354,36 @@ function Duellraum() {
           <div className="divider-line"></div>
         </div>
 
-
         {/* ================= SPIELER 1 HÄLFTE (UNTEN) ================= */}
         <section className={`player-side player-self ${activePlayer === 1 ? 'active-glow' : 'inactive-dark'}`}>
-          {/* SPIELER 1 SYSTEME (RECHTS) */}
           <aside className="side-system user-system">
             <div className={`mini-pile deck ${activePlayer === 1 ? 'active-pull' : ''}`} onClick={activePlayer === 1 ? drawCard : undefined}>
-              <span className="count">{deck1.length}</span>
-              <p>Stapel</p>
-              {activePlayer === 1 && deck1.length > 0 && <span className="action-tag">Zieh</span>}
+              <span className="count">{deck1.length}</span><p>Stapel</p>
             </div>
-            <div className="mini-pile graveyard empty">
-              <span className="count">{grave1.length}</span>
-              <p>Friedhof</p>
-            </div>
+            <div className={`mini-pile graveyard ${grave1.length > 0 ? '' : 'empty'}`}><span className="count">{grave1.length}</span><p>Friedhof</p></div>
           </aside>
 
           <div className="side-main">
-            {/* SPIELER 1 SPIELFELD */}
             <div className="field-zone user-field">
               <div className="field-grid">
                 {field1.map((card, index) => (
-                  <div key={`p1-field-${index}`} className="mini-card-wrapper">
+                  <div 
+                    key={`p1-field-${index}`} 
+                    className={`mini-card-wrapper ${activePlayer === 1 ? 'attacker' : 'target'} ${selectedAttackerIdx === index && activePlayer === 1 ? 'selected-atk' : ''}`}
+                    onClick={() => activePlayer === 1 ? selectAttacker(index) : handleAttack(index, false)}
+                  >
                     <Card {...card} />
                   </div>
                 ))}
-                {field1.length === 0 && <span className="zone-label-bg">Spieler 1 Kampfzone</span>}
               </div>
+              <button 
+                className={`hero-hp-btn ${selectedAttackerIdx !== null && activePlayer === 2 ? 'targetable' : ''}`}
+                onClick={() => activePlayer === 2 && handleAttack(null, true)}
+              >
+                👑 Spieler 1 HP: {player1Hp}
+              </button>
             </div>
 
-            {/* SPIELER 1 HAND (Verdeckt, wenn S2 am Zug ist) */}
             <div className="hand-zone user-hand">
               {activePlayer === 1 ? (
                 hand1.map((card, index) => (
@@ -396,12 +394,9 @@ function Duellraum() {
                 ))
               ) : (
                 Array.from({ length: hand1.length }).map((_, i) => (
-                  <div key={`p1-back-${i}`} className="card-back-dummy">
-                    <div className="card-back-pattern">🔮</div>
-                  </div>
+                  <div key={`p1-back-${i}`} className="card-back-dummy"><div className="card-back-pattern">🔮</div></div>
                 ))
               )}
-              {hand1.length === 0 && <p className="empty-hand-hint">Keine Karten mehr!</p>}
             </div>
           </div>
         </section>

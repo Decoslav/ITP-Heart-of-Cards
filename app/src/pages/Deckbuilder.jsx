@@ -8,10 +8,12 @@ import { ALL_CARDS, PRESET_DECKS, mapCardNamesToCards, hydrateSavedCards } from 
 const MAX_DECK_CARDS = 10;
 const MAX_SAVED_DECKS = 3;
 
+// 1. ÄNDERUNG: Sektion für Spells hinzugefügt
 const CARD_SECTIONS = [
   { type: 'tank',   title: '🛡️ Tanks'  },
   { type: 'damage', title: '⚔️ Damage' },
   { type: 'hybrid', title: '⚖️ Hybrid' },
+  { type: 'spell',  title: '✨ Spells' }, 
 ];
 
 function getPresetById(deckId) {
@@ -27,16 +29,14 @@ function Deckbuilder() {
   const [statusMessage, setStatusMessage]   = useState('');
   const [isSaving, setIsSaving]             = useState(false);
 
-  // Gespeicherte Decks des Users (max. 3)
   const [savedDecks, setSavedDecks]         = useState([]);
-  // null = neues Deck, number = vorhandene deck_id überschreiben
   const [saveTargetId, setSaveTargetId]     = useState(null);
 
-  const [searchTerm, setSearchTerm]               = useState('');
+  const [searchTerm, setSearchTerm]                 = useState('');
   const [selectedTypeFilter, setSelectedTypeFilter] = useState('all');
-  const [sortOption, setSortOption]               = useState('name-asc');
-  const [minHpFilter, setMinHpFilter]             = useState(0);
-  const [minAtkFilter, setMinAtkFilter]           = useState(0);
+  const [sortOption, setSortOption]                 = useState('name-asc');
+  const [minHpFilter, setMinHpFilter]               = useState(0);
+  const [minAtkFilter, setMinAtkFilter]             = useState(0);
 
   // ── Gespeicherte Decks laden ─────────────────────────────────────────────
   useEffect(() => {
@@ -44,14 +44,13 @@ function Deckbuilder() {
       const data = await getSavedDecks();
       if (data.success && data.decks.length > 0) {
         setSavedDecks(data.decks);
-        // Standard-Speicherziel: erstes vorhandenes Deck
         setSaveTargetId(data.decks[0].id);
       }
     }
     loadDecks().catch(() => {});
   }, []);
 
-  //Deck für Duellraum im localstorage
+  // Deck für Duellraum im localstorage
   useEffect(() => {
     localStorage.setItem('active_duel_deck', JSON.stringify(selectedCards));
   }, [selectedCards]);
@@ -66,7 +65,8 @@ function Deckbuilder() {
     if (selectedTypeFilter !== 'all')
       cards = cards.filter(c => c.type === selectedTypeFilter);
 
-    cards = cards.filter(c => c.hp >= minHpFilter && c.atk >= minAtkFilter);
+    // 2. ÄNDERUNG: Spells ignorieren Min-Werte, damit sie bei Filtern sichtbaer bleiben
+    cards = cards.filter(c => c.type === 'spell' || (c.hp >= minHpFilter && c.atk >= minAtkFilter));
 
     switch (sortOption) {
       case 'hp-desc':  cards.sort((a, b) => b.hp  - a.hp);  break;
@@ -114,7 +114,6 @@ function Deckbuilder() {
 
     if (data.success) {
       setStatusMessage('Deck gespeichert ✓');
-      // Gespeicherte Decks neu laden damit die Auswahl aktuell bleibt
       const updated = await getSavedDecks();
       if (updated.success) {
         setSavedDecks(updated.decks);
@@ -186,7 +185,7 @@ function Deckbuilder() {
             </select>
 
             <button type="button" onClick={handleSaveDeck} disabled={isSaving}>
-              {isSaving ? 'Speichert…' : 'Deck speichern'}
+              {isSaving ? 'Speichert…' : 'Deck保存'}
             </button>
           </div>
 
@@ -221,11 +220,13 @@ function Deckbuilder() {
             onChange={e => setSearchTerm(e.target.value)}
           />
 
+          {/* 3. ÄNDERUNG: Option "Spells" im Dropdown ergänzt */}
           <select value={selectedTypeFilter} onChange={e => setSelectedTypeFilter(e.target.value)}>
             <option value="all">Alle Typen</option>
             <option value="tank">Tanks</option>
             <option value="damage">Damage</option>
             <option value="hybrid">Hybrid</option>
+            <option value="spell">Spells</option> 
           </select>
 
           <select value={sortOption} onChange={e => setSortOption(e.target.value)}>
@@ -249,15 +250,18 @@ function Deckbuilder() {
           </button>
         </div>
 
+        {/* 4. ÄNDERUNG: Leere Sektionen ausblenden, falls Filter aktiv sind */}
         {filteredAndSortedCards.map((section) => (
-          <div className="pool-group" key={section.type}>
-            <h3>{section.title}</h3>
-            <div className="pool-grid">
-              {section.cards.map(card => (
-                <Card key={card.name} {...card} onCardClick={() => handleAddCard(card)} />
-              ))}
+          section.cards.length > 0 && (
+            <div className="pool-group" key={section.type}>
+              <h3>{section.title}</h3>
+              <div className="pool-grid">
+                {section.cards.map(card => (
+                  <Card key={card.name} {...card} onCardClick={() => handleAddCard(card)} />
+                ))}
+              </div>
             </div>
-          </div>
+          )
         ))}
       </section>
     </div>
