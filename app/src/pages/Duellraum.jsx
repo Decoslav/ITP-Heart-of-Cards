@@ -2,17 +2,88 @@ import { useState } from 'react';
 import Card from '../components/Card';
 import './Duellraum.css';
 import { createDuelGame, drawDuelCard, playDuelCard,
-        endDuelTurn, leaveDuelGame } from "../api/apiService";
+        endDuelTurn, leaveDuelGame, getSavedDecks} from "../api/apiService";
+
+import {PRESET_DECKS, mapCardNamesToCards, hydrateSavedCards} from "../data/cards"
+
+function buildPresetDeckOptions(){
+  return PRESET_DECKS.map((deck) =>({
+    ...deck, 
+    cards: mapCardNamesToCards(deck.cards),
+    source: "preset",
+  }));
+}
+
+async function loadAvailableDecks() {
+  
+  const presetDecks = buildPresetDeckOptions();
+
+  try{
+    const data = await getSavedDecks();
+
+    if(data.success && data.decks && data.decks.length > 0)
+    {
+      const savedDecks = data.decks.map((deck) => ({
+        id: deck.id,
+        name: deck.name,
+        description: "Gespeichertes Deck",
+        cards: hydrateSavedCards(deck.cards),
+        source: "saved",
+      }));
+
+      return [...savedDecks, ...presetDecks];
+    }
+  }catch{
+
+  }
+
+  return presetDecks;
+}
+
+function getDeckStats(deck){
+  
+  let hp = 0;
+  let atk = 0;
+
+  for(let card of deck.cards){
+    hp+= card.hp ?? 0;
+    atk+= card.atk ?? 0;
+  }
+
+  return {hp: hp, atk:atk};
+}
+
+
+
 
 function Duellraum() {
   const DeckSize = 3;
+  let player1DeckId = null;
+  let player2DeckId = null;
+
+  if(PRESET_DECKS[0]){
+    player1DeckId = PRESET_DECKS[0].id;
+  }
+
+  if(PRESET_DECKS[1]){
+    player2DeckId = PRESET_DECKS[1].id;
+  }else if(PRESET_DECKS[0]){
+    player2DeckId = PRESET_DECKS[0].id;
+  }
 
   const [error, setError] = useState('');
-  const [gameId, setGameId] = useState(null);
+  //const [gameId, setGameId] = useState(null);
 
   //Spielmodus auswählen
+  const [selectedMode, setSelectedMode] = useState(null);
   const [gameMode, setGameMode]  = useState(null);        //wenn null, dann raumauswahl, wenn "player" gegen spieler lokal, wenn "computer" gegen bot
 
+  const [availableDecks, setAvailableDecks] = useState(() => buildPresetDeckOptions());
+  const [loadingDecks, setLoadingDecks] = useState(true);
+  const [selectedPlayer1DeckId, setSelectedPlayer1DeckId] = useState(player1DeckId);
+  const [selectedPlayer2DeckId, setSelectedPlayer2DeckId] = useState(player2DeckId);
+  const[computerDeckName, setComputerDeckName] = useState("");
+  
   
   // Runden-Verwaltung
   const [activePlayer, setActivePlayer] = useState(1); // 1 = Unten, 2 = Oben
@@ -29,6 +100,31 @@ function Duellraum() {
   const [hand2, setHand2] = useState([]);
   const [field2, setField2] = useState([]);
   const [grave2, setGrave2] = useState([]);
+
+  //const [availableDecks] = useState(() => loadAvailableDecks());
+
+
+  function findDeck(deckId) {
+    return availableDecks.find((deck) => String(deck.id) === String(deckId));
+  }
+
+  function pickRandomComputerDeck(player1DeckId){
+    let possibleDecks;
+
+    if(availableDecks.length > 1){
+      possibleDecks = availableDecks.filter(function(deck){
+        return String(deck.id) !== String(player1DeckId);
+      });
+
+    }else{
+
+      possibleDecks = availableDecks;
+    }
+
+    let randomIndex = Math.floor(Math.random() * possibleDecks.length);
+
+    return possibleDecks[randomIndex];
+  }
 
   function resetGameState()
   {
@@ -66,42 +162,57 @@ function Duellraum() {
   async function chooseRoom(mode)
   {
     resetGameState();
-    
-    const savedDeck= localStorage.getItem("active_duel_deck");
+    setComputerDeckName("");
+    setSelectedMode(mode); 
+    setLoadingDecks(true);
 
-    if(!savedDeck)
-    {
-      setError("Kein Deck gefunden");
+    const decks = await loadAvailableDecks();
+
+    setAvailableDecks(decks);
+    setSelectedPlayer1DeckId(decks[0]?.id ?? "");
+    setSelectedPlayer2DeckId(decks[1]?.id ?? decks[0]?.id ?? "");
+    setLoadingDecks(false);
+  }
+
+  async function startDuel() {
+    
+    resetGameState();
+
+    const player1Deck = findDeck(selectedPlayer1DeckId);
+
+    if(!player1Deck || player1Deck.cards.length === 0){
+      setError("Spieler 1 braucht ein gültiges Deck");
       return;
     }
 
-    let parsedDeck;
+    let player2Deck;
+
+    if(selectedMode === "computer"){
+      player2Deck = pickRandomComputerDeck(player1Deck.id);
+    }else{
+      player2Deck = findDeck(selectedPlayer2DeckId);
+    }
+
+    if(!player2Deck ||player2Deck.cards.length === 0){
+      setError("Spieler 2 braucht ein gültiges Deck");
+      return;
+    }
 
     try{
-      parsedDeck = JSON.parse(savedDeck);
-    }catch
-    {
-      setError("Dein Deck konnte nicht geladen werden");
-      return;
+      const data = await createDuelGame(selectedMode, player1Deck.cards, DeckSize, player2Deck.cards);
+
+      if(!data.success) {
+        setError(data.message || "Duell konnte nicht erstellt werden");
+        return;
+      }
+
+      setComputerDeckName(selectedMode === "computer" ? player2Deck.name : "" );
+      setGameMode(selectedMode);
+      applyGameState(data.game);
+
+    }catch{
+      setError("Duell konnte nicht gestartet werden.");
     }
-
-    if(!parsedDeck ||parsedDeck.length === 0){
-      
-      setError("Das Deck ist leer");
-      return;
-    }
-
-    const data = await createDuelGame(mode, parsedDeck, DeckSize);
-
-    if(!data.success){
-      
-      setError(data.message);
-      return;
-    }
-
-    setGameMode(mode);
-    setGameId(data.gameId);
-    applyGameState(data.game);
 
   }
  
@@ -144,7 +255,6 @@ function Duellraum() {
 
   }
 
-  //Hier Computer Logik aus PHP?
 
   // Zug beenden & Bildschirm wechseln
   async function endTurn() {
@@ -205,9 +315,30 @@ function Duellraum() {
     
     await leaveDuelGame();
 
+    setSelectedMode(null);
     resetGameState();
-    setGameId(null);
     setGameMode(null);
+    setComputerDeckName("");
+  }
+
+  function renderDeckChoice(deck, selectedDeckId, onSelect){
+    const selected = String(deck.id) === String(selectedDeckId);
+    const stats = getDeckStats(deck);
+
+    return(
+      <button key= {`${deck.source}-${deck.id}`}
+      className={`room-card deck-choice-card ${selected ? 'selected-deck' : ''}`}
+        onClick={() => onSelect(deck.id)}
+      >
+        <span className="room-status">{deck.source === 'saved' ? 'Gespeichert' : 'Vorgefertigt'}</span>
+        <h2>{deck.name}</h2>
+        <p>{deck.description}</p>
+        <p>
+          {deck.cards.length} Karten · {stats.hp} HP · {stats.atk} ATK
+        </p>
+        {selected && <span className="action-tag">Ausgewählt</span>}
+      </button>
+    );
   }
 
   if(error){
@@ -216,8 +347,60 @@ function Duellraum() {
         <h2>Hoppala, ein Fehler!</h2>
         <p>{error}</p>
 
-        <button className='turn-btn confirm-btn' onClick={() => {setError(""); setGameMode(null)}}> Zurück zur Raumauswahl</button> 
+        <button className='turn-btn confirm-btn' onClick={() => {setError(""); setGameMode(null); setSelectedMode(null)}}> Zurück zur Raumauswahl</button> 
       
+      </div>
+    );
+  }
+
+  if(!gameMode  && selectedMode)
+  {
+    return(
+      <div className='duellraum-page lobby-page'>
+        <div className='duel-lobby'>
+          <p className='duell-kicker'>Duellraum</p>
+
+          <h1>Decks auswählen</h1>
+
+          <p className='lobby-subtitle'>
+            {selectedMode === "computer" ? "Wähl dein Deck, der Computer bekommt ein zufälliges." : "Wählt Decks für Spieler 1 und Spieler 2."}
+          </p>
+
+          {loadingDecks ? (<p>Lade decks...</p>)
+          : (
+            <>
+              <h2>Spieler 1</h2>
+              <div className= "room-grid">
+                {availableDecks.map((deck) => renderDeckChoice(deck, selectedPlayer1DeckId, setSelectedPlayer1DeckId))}
+              </div>
+
+              {selectedMode === "player" && (
+                <>
+                  <h2> Spieler 2</h2>
+                  <div className='room-grid' >
+                    {availableDecks.map((deck) => renderDeckChoice(deck, selectedPlayer2DeckId, setSelectedPlayer2DeckId))}
+                  </div>
+                </>
+              )}
+            
+              
+
+              {selectedMode === "computer" && (
+                <p className='lobby-subtitle'>
+                  Der Computer wählt beim Start zufällig ein Deck aus.
+                </p>
+              )}
+
+              <button className='turn-btn confirm-btn' onClick={startDuel}>
+                Duell starten
+              </button>
+
+              <button className='turn-btn room-back-btn' onClick={() => {setSelectedMode(null); setComputerDeckName("");}} >
+                Zurück
+              </button>
+            </>
+          )}
+        </div>
       </div>
     );
   }

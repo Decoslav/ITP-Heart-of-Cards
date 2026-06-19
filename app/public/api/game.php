@@ -84,6 +84,8 @@ function playCardForPlayer(&$game, $player, $cardIndex){
     array_splice($game ["players"][$player]["hand"], $cardIndex, 1);
     $game["players"] [$player]["field"][] = $card;
     $game["players"][$player]["playsThisTurn"]++;
+
+    return "ok";
 }
 
 function makeComputerTurn(&$game){
@@ -138,7 +140,23 @@ function getGame(){
 if($action === "createGame") {
 
     $mode = $_POST["mode"] ?? "";
-    $deckJson = $_POST["deck"] ?? "";
+    
+    if(isset($_POST["deck1"])){
+        $deck1Json = $_POST["deck1"];
+    }else{
+        if(isset($_POST["deck"])){
+            $deck1Json = $_POST["deck"];
+        }else{
+            $deck1Json = "";
+        }
+    }
+
+    if(isset($_POST["deck2"])){
+        $deck2Json = $_POST["deck2"];
+    }else{
+        $deck2Json = $deck1Json;
+    }
+
 
     if(isset($_POST["deckSize"])){
         $deckSize = intval($_POST["deckSize"]);
@@ -156,20 +174,31 @@ if($action === "createGame") {
             exit;
         }
 
-    $cards = json_decode($deckJson, true);
+    $cards1 = json_decode($deck1Json, true);
+    $cards2 = json_decode($deck2Json, true);
 
-    if(!$cards || count ($cards) === 0){
+    if(!$cards1 || count ($cards1) === 0){
 
         http_response_code(400);
         echo json_encode([
             "success" => false,
-            "message" => "Deck ist leer"
+            "message" => "Deck Spieler 1 ist leer"
         ]);
         exit;
     } 
 
-    $deck1 = shuffleCards($cards);
-    $deck2 = shuffleCards($cards);
+    if(!$cards2 || count ($cards2) === 0){
+
+        http_response_code(400);
+        echo json_encode([
+            "success" => false,
+            "message" => "Deck Spieler 2 ist leer"
+        ]);
+        exit;
+    } 
+
+    $deck1 = shuffleCards($cards1);
+    $deck2 = shuffleCards($cards2);
 
     $game = [
         "gameId" => bin2hex(random_bytes(8)),

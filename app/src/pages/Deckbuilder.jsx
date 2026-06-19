@@ -185,7 +185,7 @@ function Deckbuilder() {
             </select>
 
             <button type="button" onClick={handleSaveDeck} disabled={isSaving}>
-              {isSaving ? 'Speichert…' : 'Deck保存'}
+              {isSaving ? 'Speichert…' : 'Deck'}
             </button>
           </div>
 

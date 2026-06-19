@@ -67,13 +67,21 @@ export async function getSavedDecks() {
     return response.json();
 }
 
-export async function createDuelGame(mode, deck, deckSize){
+export async function createDuelGame(mode, player1Deck, deckSize, player2Deck = null){
 
     const formData = new FormData();
 
     formData.append("action" , "createGame");
     formData.append("mode", mode);
-    formData.append("deck", JSON.stringify(deck));
+
+    formData.append("deck", JSON.stringify(player1Deck));
+    formData.append("deck1", JSON.stringify(player1Deck));
+
+    if(player2Deck){
+
+        formData.append("deck2", JSON.stringify(player2Deck));
+    }
+    
     formData.append("deckSize", deckSize);
 
     const response = await fetch(baseURL+ "game.php", {
