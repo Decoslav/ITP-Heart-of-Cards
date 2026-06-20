@@ -2,7 +2,7 @@ import { useState } from 'react';
 import Card from '../components/Card';
 import './Duellraum.css';
 import { createDuelGame, drawDuelCard, playDuelCard,
-        endDuelTurn, leaveDuelGame, getSavedDecks} from "../api/apiService";
+        endDuelTurn, leaveDuelGame, getSavedDecks, attackDuellTarget} from "../api/apiService";
 
 import {PRESET_DECKS, mapCardNamesToCards, hydrateSavedCards} from "../data/cards"
 
@@ -82,12 +82,19 @@ function Duellraum() {
   const [loadingDecks, setLoadingDecks] = useState(true);
   const [selectedPlayer1DeckId, setSelectedPlayer1DeckId] = useState(player1DeckId);
   const [selectedPlayer2DeckId, setSelectedPlayer2DeckId] = useState(player2DeckId);
-  const[computerDeckName, setComputerDeckName] = useState("");
+  const [computerDeckName, setComputerDeckName] = useState("");
+  const [selectedAttackerIndex, setSelectedAttackerIndex] = useState(null);
   
   
   // Runden-Verwaltung
   const [activePlayer, setActivePlayer] = useState(1); // 1 = Unten, 2 = Oben
   const [isTransitioning, setIsTransitioning] = useState(false); // Verdeckt den Screen beim Wechsel
+
+  const [hp1, setHp1] = useState(30);
+  const [hp2, setHp2] = useState(30);
+  const [winner, setWinner] = useState(null);
+  const [gameOver, setGameOver] = useState(false);
+  const [duelMessage, setDuelMessage] = useState("");
 
   // Zustand für Spieler 1 (Unten)
   const [deck1, setDeck1] = useState([]);
@@ -101,7 +108,25 @@ function Duellraum() {
   const [field2, setField2] = useState([]);
   const [grave2, setGrave2] = useState([]);
 
+
   //const [availableDecks] = useState(() => loadAvailableDecks());
+
+
+  const activePlayerKey = String(activePlayer);
+  let opponentPlayerKey;
+  let activeField;
+  let opponentField;
+
+  if(activePlayerKey === "1"){
+    opponentPlayerKey = "2";
+    activeField = field1;
+    opponentField = field2;
+  }else{
+    opponentPlayerKey = "1";
+    activeField = field2;
+    opponentField = field1;
+  }
+
 
 
   function findDeck(deckId) {
@@ -156,6 +181,14 @@ function Duellraum() {
     setHand2(game.players["2"].hand);
     setField2(game.players["2"].field);
     setGrave2(game.players["2"].grave);
+
+    setHp1(game.players["1"].hp ?? 30);
+    setHp2(game.players["2"].hp ?? 30);
+
+    setWinner(game.winner ?? null);
+    setGameOver(game.gameOver ?? false);
+
+    setSelectedAttackerIndex(null);
 
   }
 
@@ -253,6 +286,92 @@ function Duellraum() {
 
     applyGameState(data.game);
 
+  }
+
+  function handleOwnFieldCardClick(index) {
+    if(gameOver){
+      return;
+    }
+
+    const card = activeField[index];
+
+    if(!card){
+      return;
+    }
+
+    if (card.type === "spell") {
+    setDuelMessage("Zauberkarten können nicht normal angreifen.");
+    return;
+    }
+
+    if (card.hasAttacked) {
+      setDuelMessage("Diese Karte hat bereits angegriffen.");
+      return;
+    }
+
+    setSelectedAttackerIndex(index);
+    setDuelMessage(`${card.name} als Angreifer ausgewählt.`);
+
+  }
+
+  async function handleOpponentFieldCardClick(targetIndex){
+    if(gameOver){
+      return;
+    }
+
+    if(selectedAttackerIndex === null){
+      setDuelMessage("Wähle zuerst eine eigene Karte als Angreifer aus");
+      return;
+
+    }
+
+      try{
+        const data = await attackDuellTarget(selectedAttackerIndex, "card", targetIndex);
+
+        if(data.success){
+          applyGameState(data.game);
+          setDuelMessage(data.message || "Karte angegriffen");
+
+        }else{
+          setDuelMessage(data.message || "Angriff fehlgeschlagen");
+        }
+
+      }catch(error){
+
+        console.error(error);
+        setDuelMessage("Fehler beim Angriff");
+      }
+
+  }
+
+  async function handleOpponentPlayerClick() {
+    if(gameOver){
+      return;
+    }
+
+    if(selectedAttackerIndex === null){
+      setDuelMessage("Wähle zuerst eine eigene Karte als Angreifer aus");
+      return;
+
+    }
+
+      try{
+        const data = await attackDuellTarget(selectedAttackerIndex, "player");
+
+        if(data.success){
+          applyGameState(data.game);
+          setDuelMessage(data.message || "Spieler angegriffen");
+
+        }else{
+          setDuelMessage(data.message || "Angriff fehlgeschlagen");
+        }
+
+      }catch(error){
+
+        console.error(error);
+        setDuelMessage("Fehler beim Angriff");
+      }
+    
   }
 
 
@@ -500,11 +619,27 @@ function Duellraum() {
             {/* SPIELER 2 SPIELFELD */}
             <div className="field-zone enemy-field">
               <div className="field-grid">
-                {field2.map((card, index) => (
-                  <div key={`p2-field-${index}`} className="mini-card-wrapper">
-                    <Card {...card} />
-                  </div>
-                ))}
+                {field2.map((card, index) => {
+                  let className = "mini-card-wrapper attack-target"
+
+                  if(activePlayer === 2 && selectedAttackerIndex === index){
+                    className = "mini-card-wrapper selected-attacker";
+                  }
+
+                  function handleClick(){
+                    if(activePlayer === 2 ){
+                      handleOwnFieldCardClick(index);
+                    }else{
+                      handleOpponentFieldCardClick(index);
+                    }
+                  }
+
+                  return (<div key={`p2-field-${index}`} className={className} onClick={handleClick}>
+                          <Card {...card}/>
+                          </div>
+                          );
+              
+                })}
                 {field2.length === 0 && <span className="zone-label-bg">Spieler 2 Kampfzone</span>}
               </div>
             </div>
@@ -512,6 +647,12 @@ function Duellraum() {
 
           {/* SPIELER 2 SYSTEME (LINKS) */}
           <aside className="side-system enemy-system">
+            <div className={`mini-pile hp-pile ${activePlayer === 1 ? "attack-target" : ""}` }
+              onClick={activePlayer === 1 ? handleOpponentPlayerClick : undefined}>
+                <span className=' count'>{hp2}</span>
+                <p>HP</p>
+
+            </div>
             <div className="mini-pile graveyard empty">
               <span className="count">{grave2.length}</span>
               <p>Friedhof</p>
@@ -531,6 +672,7 @@ function Duellraum() {
           <button className="turn-btn end-turn-btn" onClick={endTurn}>
             ⚔️ Zug von {getCurrentPlayerName()} beenden
           </button>
+          {duelMessage && (<p className='duel-message'>{duelMessage}</p>)}
 
           <button className='turn-btn room-back-btn' onClick={leaveRoom}>
                 Raum Verlassen
@@ -544,6 +686,12 @@ function Duellraum() {
         <section className={`player-side player-self ${activePlayer === 1 ? 'active-glow' : 'inactive-dark'}`}>
           {/* SPIELER 1 SYSTEME (RECHTS) */}
           <aside className="side-system user-system">
+            <div className={`mini-pile hp-pile ${activePlayer === 2 ? "attack-target" : ""}` }
+              onClick={activePlayer === 2 ? handleOpponentPlayerClick : undefined}>
+                <span className=' count'>{hp1}</span>
+                <p>HP</p>
+
+            </div>
             <div className={`mini-pile deck ${activePlayer === 1 ? 'active-pull' : ''}`} onClick={activePlayer === 1 ? drawCard : undefined}>
               <span className="count">{deck1.length}</span>
               <p>Stapel</p>
@@ -559,11 +707,27 @@ function Duellraum() {
             {/* SPIELER 1 SPIELFELD */}
             <div className="field-zone user-field">
               <div className="field-grid">
-                {field1.map((card, index) => (
-                  <div key={`p1-field-${index}`} className="mini-card-wrapper">
-                    <Card {...card} />
-                  </div>
-                ))}
+                {field1.map((card, index) => {
+                  let className = "mini-card-wrapper attack-target"
+
+                  if(activePlayer === 1 && selectedAttackerIndex === index){
+                    className = "mini-card-wrapper selected-attacker";
+                  }
+
+                  function handleClick(){
+                    if(activePlayer === 1 ){
+                      handleOwnFieldCardClick(index);
+                    }else{
+                      handleOpponentFieldCardClick(index);
+                    }
+                  }
+
+                  return (<div key={`p1-field-${index}`} className={className} onClick={handleClick}>
+                          <Card {...card}/>
+                          </div>
+                          );
+              
+                })}
                 {field1.length === 0 && <span className="zone-label-bg">Spieler 1 Kampfzone</span>}
               </div>
             </div>

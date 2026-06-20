@@ -41,7 +41,7 @@
 }
 .inactive-dark {
   opacity: 0.4;
-  pointer-events: none; /* Inaktiver Spieler darf nichts anklicken! */
+  pointer-events: auto; /* Inaktiver Spieler darf nichts anklicken! */
 }
 
 .side-main {

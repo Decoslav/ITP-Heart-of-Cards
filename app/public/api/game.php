@@ -43,6 +43,45 @@ function resetTurnLimit(&$game, $player){
 
     $game["players"][$player]["drawsThisTurn"] = 0;
     $game["players"][$player]["playsThisTurn"] = 0;
+    resetAttackFlags($game, $player);
+}
+
+function getOpponent($player){
+    
+    if($player === "1"){
+        return "2";
+    }else{
+        return "1";
+    }
+}
+
+function stopIfGameOver($game){
+    if(!empty($game["gameOver"])){
+
+        http_response_code(400);
+        echo json_encode([
+            "success" => false,
+            "message" => "Das Duell ist bereits beendet"
+        ]);
+        exit;
+    }
+}
+
+function checkWinner(&$game, $opponent, $activePlayer){
+
+    if($game["players"][$opponent]["hp"] <= 0){
+        $game["players"][ $opponent]["hp"] = 0;
+        $game["winner"] = $activePlayer;
+        $game["gameOver"] = true; 
+    }
+}
+
+function resetAttackFlags(&$game, $player){
+    
+    foreach($game["players"][$player]["field"] as &$card){
+        $card["hasAttacked"]= false;
+    }
+    unset($card);
 }
 
 function drawCardForPlayer(&$game, $player){
@@ -63,7 +102,7 @@ function drawCardForPlayer(&$game, $player){
         return "ok";
 }
 
-function playCardForPlayer(&$game, $player, $cardIndex){
+function playCardForPlayer(&$game, $player, $cardIndex, $targetIndex = null){
 
     if($game["players"][$player]["playsThisTurn"] >= 2){
         return "limit";
@@ -81,7 +120,18 @@ function playCardForPlayer(&$game, $player, $cardIndex){
     }
 
     $card = $game["players"][$player]["hand"][$cardIndex];
-    array_splice($game ["players"][$player]["hand"], $cardIndex, 1);
+
+    if(($card["type"] ?? "") === "spell"){
+        resolveSpellCard($game, $player, $card, $targetIndex);
+
+        array_splice($game["players"][$player]["hand"], $cardIndex, 1);
+        $game["players"] [$player]["grave"][] = $card;
+        $game["players"][$player]["playsThisTurn"]++;
+
+        return "ok";
+    }
+
+    array_splice($game["players"][$player]["hand"], $cardIndex, 1);
     $game["players"] [$player]["field"][] = $card;
     $game["players"][$player]["playsThisTurn"]++;
 
@@ -117,8 +167,82 @@ function makeComputerTurn(&$game){
         }
     }
 
+    makeComputerAttack($game);
     $game["activePlayer"] = 1;
     resetTurnLimit($game, "1");
+
+}
+
+function makeComputerAttack(&$game){
+
+$player = "2";
+$opponent = "1";
+$attackers = [];
+
+foreach($game["players"][$player]["field"] as $index => $card){
+
+    if(($card["type"] ?? "") === "spell") continue;
+    if(!empty($card["hasAttacked"])) continue;
+    if(intval($card["atk"] ?? 0) <= 0) continue;
+
+    $attackers[] = $index;
+}
+
+if(count($attackers) === 0){
+    return;
+}
+
+shuffle($attackers);
+
+foreach($attackers as $attackerIndex){
+
+    if(!isset($game["players"][$player]["field"][$attackerIndex])) continue;
+
+    $attacker = $game["players"][$player]["field"][$attackerIndex];
+    $damage = intval($attacker["atk"] ?? 0);
+
+    if(playerHasTankOnField($game, $opponent)){
+
+        $tankTargets = [];
+
+        foreach($game["players"][$opponent]["field"] as $targetIndex => $targetCard){
+            if(isTankCard($targetCard)){
+                $tankTargets[] = $targetIndex;
+            }
+        }
+
+        if(count($tankTargets) === 0) continue;
+
+        $targetIndex = $tankTargets[random_int(0, count($tankTargets) -1)];
+        damageEnemyCard($game, $opponent, $targetIndex, $damage);
+        $game["players"][$player]["field"][$attackerIndex]["hasAttacked"] = true;
+        continue;
+
+    }
+
+    //Ohne Tank also wird zufällig der Spieler oder eine Karte angegriffen
+    $canAttackCard = count($game["players"][$opponent]["field"]) > 0;
+    $attackPlayerDirectly = !$canAttackCard || random_int(0,1) === 1;
+
+    if($attackPlayerDirectly){
+
+        $game["players"][$opponent]["hp"] = intval($game["players"][$opponent]["hp"] ?? 0 ) - $damage;
+
+        checkWinner($game, $opponent, $player);
+
+        $game["players"][$player]["field"][$attackerIndex]["hasAttacked"] = true;
+
+        if(!empty($game["gameOver"])){
+            return;
+        }
+    }else{
+        $targetIndex = random_int(0, count($game["players"][$opponent]["field"]) -1 );
+        damageEnemyCard($game, $opponent, $targetIndex, $damage);
+        $game["players"][$player]["field"][$attackerIndex]["hasAttacked"] = true;
+    }
+
+}
+
 
 }
 
@@ -136,6 +260,104 @@ function getGame(){
 
     return $_SESSION["duel_game"];
 }
+
+function isTankCard($card){
+    if(isset($card["type"]) && $card["type"] === "tank"){
+        return true;
+    }else{
+        return false;
+    }
+}
+
+function playerHasTankOnField($game, $player){
+    foreach($game["players"][$player]["field"] as $card){
+        if(isTankCard($card)){
+            return true;
+        }
+    }
+    return false;
+}
+
+function damageEnemyCard(&$game, $targetPlayer, $targetIndex, $damage){
+
+    if(!isset($game["players"][$targetPlayer]["field"][$targetIndex])){
+        http_response_code(400);
+        echo json_encode([
+            "success" => false,
+            "message" => "Zielkarte existiert nicht"
+        ]);
+        exit;
+    }
+
+    $game["players"][$targetPlayer]["field"][$targetIndex]["hp"] = intval($game["players"][$targetPlayer]["field"][$targetIndex]["hp"] ?? 0) - $damage;
+
+    if($game["players"][$targetPlayer]["field"][$targetIndex]["hp"] <= 0){
+
+        $destroyedCard = $game["players"][$targetPlayer]["field"][$targetIndex];
+        array_splice($game["players"][$targetPlayer]["field"], $targetIndex, 1);
+        $game["players"][$targetPlayer]["grave"][] = $destroyedCard;
+
+    }
+
+}
+
+function healOwnField(&$game, $player, $amount){
+
+    foreach($game["players"][$player]["field"]as &$card){
+        if(($card["type"] ?? "") !== "spell"){
+            $card["hp"] = intval($card["hp"] ?? 0) + $amount;
+        }
+    }
+    unset($card);
+}
+
+function resolveSpellCard(&$game, $player, $card, $targetIndex = null){
+
+    $opponent = getOpponent($player);
+    $effect = $card["effect"] ?? "";
+    $value = intval($card["atk"] ?? 0);
+
+    if($effect === "heal_all"){
+        healOwnField($game, $player, $value);
+        return;
+    }
+
+    if($effect === "damage_single"){
+        if($targetIndex === null){
+
+            http_response_code(400);
+            echo json_encode([
+                "success" => false,
+                "message" => "Fireball braucht ein Ziel"
+            ]);
+            exit;
+        }
+
+        if(playerHasTankOnField($game, $opponent)){
+            if(!isset($game["players"][$opponent]["field"][$targetIndex]) || !isTankCard($game["players"][$opponent]["field"][$targetIndex])){
+
+                http_response_code(400);
+                echo json_encode([
+                    "success" => false,
+                    "message" => "Ein Tank liegt am Feld, greife diesen an"
+                ]);
+                exit;
+            }
+        }
+
+        damageEnemyCard($game, $opponent, $targetIndex, $value);
+        return;
+    }
+
+    http_response_code(400);
+    echo json_encode([
+        "success" => false,
+        "message" => "Unbekannter Spell-Effekt"
+    ]);
+    exit;
+}
+
+
 
 if($action === "createGame") {
 
@@ -206,6 +428,7 @@ if($action === "createGame") {
         "activePlayer" => 1,
         "players" => ["1" =>
         [
+            "hp" => 30,
             "deck" => array_slice($deck1, $deckSize),
             "hand" => array_slice($deck1, 0 , $deckSize),
             "field" => [],
@@ -215,13 +438,18 @@ if($action === "createGame") {
         ],
         "2" =>
         [
+            "hp" => 30,
             "deck" => array_slice($deck2, $deckSize),
             "hand" => array_slice($deck2, 0 , $deckSize),
             "field" => [],
             "grave" => [],
             "drawsThisTurn" => 0,
             "playsThisTurn" => 0
-        ]]
+        ]],
+        
+        "winner" => null,
+        "gameOver" => false 
+
     ];
 
     $_SESSION["duel_game"] = $game;
@@ -237,6 +465,7 @@ if($action === "createGame") {
 
 if($action === "drawCard"){
     $game = getGame();
+    stopIfGameOver($game);
     $player = strval($game["activePlayer"]);
 
     if($game["mode"] === "computer" && $player === "2"){
@@ -285,6 +514,7 @@ if($action === "drawCard"){
 if($action === "playCard"){
 
     $game = getGame();
+    stopIfGameOver($game);
 
     $player = strval($game["activePlayer"]);
 
@@ -306,7 +536,8 @@ if($action === "playCard"){
         exit;
     }
 
-    $playResult = playCardForPlayer($game, $player, $cardIndex);
+    $targetIndex = isset($_POST["targetIndex"]) ? intval($_POST["targetIndex"]) : null;
+    $playResult = playCardForPlayer($game, $player, $cardIndex, $targetIndex);
 
     if($playResult === "limit"){
         
@@ -330,9 +561,157 @@ if($action === "playCard"){
 
 }
 
+if($action=== "attack"){
+
+    $game = getGame();
+    stopIfGameOver($game);
+
+    $activePlayer = strval($game["activePlayer"]);
+    $opponent = getOpponent($activePlayer);
+
+    if($game["mode"] === "computer" && $activePlayer === "2"){
+        http_response_code(400);
+        echo json_encode([
+            "success" => false,
+            "message" => "Der computer greift selbst an"
+        ]);
+        exit;
+    }
+
+    if(isset($_POST["attackerIndex"])){
+        $attackerIndex = intval($_POST["attackerIndex"]);
+    }else{
+        $attackerIndex = -1;
+    }
+
+    if(isset($_POST["targetIndex"])){
+        $targetIndex = intval($_POST["targetIndex"]);
+    }else{
+        $targetIndex = -1;
+    }
+
+    $targetType = $_POST["targetType"] ?? "";
+
+    if(!isset($game["players"][$activePlayer]["field"][$attackerIndex])){
+
+        http_response_code(400);
+        echo json_encode([
+            "success" => false,
+            "message" => "Angreifende Karte existiert nicht"
+        ]);
+        exit;
+    }
+
+    $attacker = $game["players"][$activePlayer]["field"][$attackerIndex];
+
+    //ist falsch eine zauberkarte kann angreifen
+    if(($attacker["type"] ?? "") === "spell"){
+
+        http_response_code(400);
+        echo json_encode([
+            "success" => false,
+            "message" => "Zauberkarten können nicht angreifen"
+        ]);
+        exit;
+    }
+
+    if(!empty($attacker["hasAttacked"])){
+        http_response_code(400);
+        echo json_encode([
+            "success" => false,
+            "message" => "Diese Karte hat in dieser Runde bereits angegriffen"
+        ]);
+        exit;
+    }
+
+    $damage = intval($attacker["atk"] ?? 0);
+
+    if($damage <= 0){
+        http_response_code(400);
+        echo json_encode([
+            "success" => false,
+            "message" => "Diese Karte hat keinen Angriffswert"
+        ]);
+        exit;
+    }
+
+    if(playerHasTankOnField($game, $opponent)){
+
+        if($targetType !== "card") {
+            http_response_code(400);
+            echo json_encode([
+                "success" => false,
+                "message" => "Wenn ein Tank am Feld ist muss dieser angegriffen werden"
+            ]);
+            exit;
+        }
+
+        if(!isset($game["players"][$opponent]["field"][$targetIndex]) || !isTankCard($game["players"][$opponent]["field"][$targetIndex])){
+            http_response_code(400);
+            echo json_encode([
+                "success" => false,
+                "message" => "Der Tank muss angegriffen werden"
+            ]);
+            exit;
+        }
+    }
+
+    if($targetType === "card") {
+        if(!isset($game["players"][$opponent]["field"][$targetIndex])){
+            http_response_code(400);
+            echo json_encode([
+                "success" => false,
+                "message" => "Zielkarte existiert nicth"
+            ]);
+            exit;
+        }
+
+
+
+        $game["players"][$opponent]["field"][$targetIndex]["hp"] = intval($game["players"][$opponent]["field"][$targetIndex]["hp"] ?? 0) - $damage;
+
+        if($game["players"][$opponent]["field"][$targetIndex]["hp"] <= 0){
+
+            $destroyedCard = $game["players"][$opponent]["field"][$targetIndex];
+            array_splice($game["players"][$opponent]["field"], $targetIndex, 1);
+            $game["players"][$opponent]["grave"][] = $destroyedCard;
+        }
+
+        $message = "Karte angegriffen";
+
+    }else if($targetType === "player"){
+
+        $game["players"][$opponent]["hp"] = intval($game["players"][$opponent]["hp"] ?? 0) - $damage;
+
+        checkWinner($game, $opponent, $activePlayer);
+        $message = "Spieler angegriffen";
+
+    }else{
+        http_response_code(400);
+        echo json_encode([
+            "success" => false,
+            "message" => "Ungültiges angriffsziel"
+        ]);
+        exit;
+    }
+
+    $game["players"][$activePlayer]["field"][$attackerIndex]["hasAttacked"] = true;
+
+    $_SESSION["duel_game"] = $game;
+
+    echo json_encode([
+        "success" => true,
+        "message" => $message,
+        "game" => $game
+    ]);
+    exit;
+
+}
+
 if($action === "endTurn"){
 
     $game = getGame();
+    stopIfGameOver($game);
 
     if($game["mode"] === "computer" && intval($game["activePlayer"]) === 1){
 

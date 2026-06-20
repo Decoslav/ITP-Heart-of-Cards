@@ -108,12 +108,18 @@ export async function drawDuelCard() {
     return response.json();
 }
 
-export async function playDuelCard(cardIndex) {
+export async function playDuelCard(cardIndex, targetIndex = null) {
 
     const formData = new FormData();
     formData.append("action", "playCard");
     formData.append("cardIndex", cardIndex);
 
+    
+    if(targetIndex !== null && targetIndex !== undefined){
+        formData.append("targetIndex", String(targetIndex));
+    }
+
+    
     const response = await fetch(baseURL + "game.php", {
         method: "POST",
         body: formData, 
@@ -124,6 +130,29 @@ export async function playDuelCard(cardIndex) {
     return response.json();
     
 }
+
+export async function attackDuellTarget(attackerIndex, targetType, targetIndex = null) {
+    
+    const formData = new FormData();
+    formData.append("action", "attack");
+    formData.append("attackerIndex", attackerIndex);
+    formData.append("targetType", targetType);
+
+    if(targetIndex !== null &&  targetIndex !== undefined){
+        formData.append("targetIndex", targetIndex);
+    }
+
+    const response = await fetch(baseURL + "game.php",{
+        method: "POST", 
+        body: formData,
+        credentials: "include"
+    });
+    
+    return response.json();
+
+}
+
+
 
 export async function endDuelTurn(){
 
