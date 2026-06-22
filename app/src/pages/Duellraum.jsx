@@ -95,6 +95,13 @@ function Duellraum() {
   const [winner, setWinner] = useState(null);
   const [gameOver, setGameOver] = useState(false);
   const [duelMessage, setDuelMessage] = useState("");
+  const [hitEffect, setHitEffect] = useState(null); // { target: 'field1'|'field2'|'hp1'|'hp2', index }
+  const [deckShake, setDeckShake] = useState(false);
+  const [playErrorIndex, setPlayErrorIndex] = useState(null);
+  const [draws1, setDraws1] = useState(0);
+  const [draws2, setDraws2] = useState(0);
+  const [pendingSpellIndex, setPendingSpellIndex] = useState(null); // Hand-Index eines Zaubers, der noch ein Ziel braucht
+  const [previewCard, setPreviewCard] = useState(null); // Karte, die aktuell groß an der Seite angezeigt wird
 
   // Zustand für Spieler 1 (Unten)
   const [deck1, setDeck1] = useState([]);
@@ -166,6 +173,10 @@ function Duellraum() {
     setHand2([]);
     setField2([]);
     setGrave2([]);
+
+    setDraws1(0);
+    setDraws2(0);
+    setPendingSpellIndex(null);
   }
 
   function applyGameState(game)
@@ -184,6 +195,9 @@ function Duellraum() {
 
     setHp1(game.players["1"].hp ?? 30);
     setHp2(game.players["2"].hp ?? 30);
+
+    setDraws1(game.players["1"].drawsThisTurn ?? 0);
+    setDraws2(game.players["2"].drawsThisTurn ?? 0);
 
     setWinner(game.winner ?? null);
     setGameOver(game.gameOver ?? false);
@@ -262,7 +276,8 @@ function Duellraum() {
     const data = await drawDuelCard();
 
     if(!data.success){
-      alert(data.message);
+      setDeckShake(true);
+      setTimeout(() => setDeckShake(false), 450);
       return;
     }
 
@@ -271,21 +286,48 @@ function Duellraum() {
   }
 
   // Karte ausspielen (Nur für den aktiven Spieler)
-  async function playCard(index) {
+  async function playCard(index, targetIndex = null) {
 
     if(gameMode === "computer" && activePlayer === 2){
       return;
     }
 
-    const data = await playDuelCard(index);
+    const data = await playDuelCard(index, targetIndex);
 
     if(!data.success){
-      alert(data.message);
+      setPlayErrorIndex(index);
+      setTimeout(() => setPlayErrorIndex(null), 450);
+      setDuelMessage(data.message || "Karte kann nicht gespielt werden.");
       return;
     }
 
     applyGameState(data.game);
 
+    if(targetIndex !== null){
+      triggerHitEffect(opponentPlayerKey === "1" ? "field1" : "field2", targetIndex);
+    }
+
+  }
+
+  function triggerHitEffect(target, index) {
+    setHitEffect({ target, index });
+    setTimeout(() => setHitEffect(null), 450);
+  }
+
+  // Klick auf eine Handkarte: Zauber mit Ziel brauchen erst eine Zielauswahl
+  function handleHandCardClick(index, card) {
+    if(card.type === "spell" && card.effect === "damage_single"){
+      setPendingSpellIndex(index);
+      setDuelMessage(`${card.name}: Wähle eine gegnerische Karte als Ziel.`);
+      return;
+    }
+
+    playCard(index);
+  }
+
+  function cancelPendingSpell() {
+    setPendingSpellIndex(null);
+    setDuelMessage("Zauber abgebrochen.");
   }
 
   function handleOwnFieldCardClick(index) {
@@ -319,6 +361,13 @@ function Duellraum() {
       return;
     }
 
+    if(pendingSpellIndex !== null){
+      const spellIndex = pendingSpellIndex;
+      setPendingSpellIndex(null);
+      await playCard(spellIndex, targetIndex);
+      return;
+    }
+
     if(selectedAttackerIndex === null){
       setDuelMessage("Wähle zuerst eine eigene Karte als Angreifer aus");
       return;
@@ -331,6 +380,7 @@ function Duellraum() {
         if(data.success){
           applyGameState(data.game);
           setDuelMessage(data.message || "Karte angegriffen");
+          triggerHitEffect(opponentPlayerKey === "1" ? "field1" : "field2", targetIndex);
 
         }else{
           setDuelMessage(data.message || "Angriff fehlgeschlagen");
@@ -361,6 +411,7 @@ function Duellraum() {
         if(data.success){
           applyGameState(data.game);
           setDuelMessage(data.message || "Spieler angegriffen");
+          triggerHitEffect(opponentPlayerKey === "1" ? "hp1" : "hp2");
 
         }else{
           setDuelMessage(data.message || "Angriff fehlgeschlagen");
@@ -560,6 +611,23 @@ function Duellraum() {
   }
 
 
+  // Spielende, sobald ein Spieler 0 HP erreicht hat
+  if (gameOver) {
+    const winnerName = winner === "1" ? "Spieler 1" : (gameMode === "computer" ? "Computer" : "Spieler 2");
+
+    return (
+      <div className="duellraum-page game-over-screen">
+        <div className="game-over-card">
+          <p className="duell-kicker">Duell beendet</p>
+          <h1>{winnerName} gewinnt!</h1>
+          <button className="turn-btn confirm-btn" onClick={leaveRoom}>
+            Zurück zur Raumauswahl
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   // Sichtschutz-Overlay bei Spielerwechsel (Spionage-Schutz)
   if (isTransitioning) {
 
@@ -590,7 +658,7 @@ function Duellraum() {
   }
 
   return (
-    <div className="duellraum-page">
+    <div className={`duellraum-page ${pendingSpellIndex !== null ? 'spell-targeting' : ''}`}>
       <div className="arena-fullscreen">
         
         {/* ================= SPIELER 2 HÄLFTE (OBEN) ================= */}
@@ -601,7 +669,7 @@ function Duellraum() {
             <div className="hand-zone enemy-hand">
               {activePlayer === 2 && gameMode === "player" ? (
                 hand2.map((card, index) => (
-                  <div key={`p2-hand-${index}`} className="mini-card-wrapper click-play" onClick={() => playCard(index)}>
+                  <div key={`p2-hand-${index}`} className={`mini-card-wrapper click-play ${playErrorIndex === index ? 'shake' : ''} ${pendingSpellIndex === index ? 'pending-spell' : ''}`} onClick={() => handleHandCardClick(index, card)} onMouseEnter={() => setPreviewCard(card)} onMouseLeave={() => setPreviewCard(null)}>
                     <Card {...card} />
                     <div className="card-action-overlay color-green">Spielen</div>
                   </div>
@@ -626,6 +694,14 @@ function Duellraum() {
                     className = "mini-card-wrapper selected-attacker";
                   }
 
+                  if(hitEffect?.target === "field2" && hitEffect.index === index){
+                    className += " hit-flash";
+                  }
+
+                  if(card.hasAttacked){
+                    className += " spent-attacker";
+                  }
+
                   function handleClick(){
                     if(activePlayer === 2 ){
                       handleOwnFieldCardClick(index);
@@ -634,7 +710,7 @@ function Duellraum() {
                     }
                   }
 
-                  return (<div key={`p2-field-${index}`} className={className} onClick={handleClick}>
+                  return (<div key={`p2-field-${index}`} className={className} onClick={handleClick} onMouseEnter={() => setPreviewCard(card)} onMouseLeave={() => setPreviewCard(null)}>
                           <Card {...card}/>
                           </div>
                           );
@@ -647,7 +723,7 @@ function Duellraum() {
 
           {/* SPIELER 2 SYSTEME (LINKS) */}
           <aside className="side-system enemy-system">
-            <div className={`mini-pile hp-pile ${activePlayer === 1 ? "attack-target" : ""}` }
+            <div className={`mini-pile hp-pile ${activePlayer === 1 ? "attack-target" : ""} ${hitEffect?.target === "hp2" ? "hit-flash" : ""}`}
               onClick={activePlayer === 1 ? handleOpponentPlayerClick : undefined}>
                 <span className=' count'>{hp2}</span>
                 <p>HP</p>
@@ -657,10 +733,10 @@ function Duellraum() {
               <span className="count">{grave2.length}</span>
               <p>Friedhof</p>
             </div>
-            <div className={`mini-pile deck secondary ${activePlayer === 2 && gameMode === "player" ? 'active-pull' : ''}`} onClick={activePlayer === 2 && gameMode === "player" ? drawCard : undefined}>
+            <div className={`mini-pile deck secondary ${activePlayer === 2 && gameMode === "player" && draws2 < 2 ? 'active-pull' : ''} ${deckShake && activePlayer === 2 ? 'shake' : ''} ${draws2 >= 2 ? 'deck-maxed' : ''}`} onClick={activePlayer === 2 && gameMode === "player" && draws2 < 2 ? drawCard : undefined}>
               <span className="count">{deck2.length}</span>
               <p>Stapel</p>
-              {activePlayer === 2 && gameMode === "player" && deck2.length > 0 && <span className="action-tag">Zieh</span>}
+              {activePlayer === 2 && gameMode === "player" && deck2.length > 0 && draws2 < 2 && <span className="action-tag">Zieh</span>}
             </div>
           </aside>
         </section>
@@ -674,6 +750,12 @@ function Duellraum() {
           </button>
           {duelMessage && (<p className='duel-message'>{duelMessage}</p>)}
 
+          {pendingSpellIndex !== null && (
+            <button className='turn-btn room-back-btn' onClick={cancelPendingSpell}>
+              Zauber abbrechen
+            </button>
+          )}
+
           <button className='turn-btn room-back-btn' onClick={leaveRoom}>
                 Raum Verlassen
           </button>
@@ -686,16 +768,16 @@ function Duellraum() {
         <section className={`player-side player-self ${activePlayer === 1 ? 'active-glow' : 'inactive-dark'}`}>
           {/* SPIELER 1 SYSTEME (RECHTS) */}
           <aside className="side-system user-system">
-            <div className={`mini-pile hp-pile ${activePlayer === 2 ? "attack-target" : ""}` }
+            <div className={`mini-pile hp-pile ${activePlayer === 2 ? "attack-target" : ""} ${hitEffect?.target === "hp1" ? "hit-flash" : ""}`}
               onClick={activePlayer === 2 ? handleOpponentPlayerClick : undefined}>
                 <span className=' count'>{hp1}</span>
                 <p>HP</p>
 
             </div>
-            <div className={`mini-pile deck ${activePlayer === 1 ? 'active-pull' : ''}`} onClick={activePlayer === 1 ? drawCard : undefined}>
+            <div className={`mini-pile deck ${activePlayer === 1 && draws1 < 2 ? 'active-pull' : ''} ${deckShake && activePlayer === 1 ? 'shake' : ''} ${draws1 >= 2 ? 'deck-maxed' : ''}`} onClick={activePlayer === 1 && draws1 < 2 ? drawCard : undefined}>
               <span className="count">{deck1.length}</span>
               <p>Stapel</p>
-              {activePlayer === 1 && deck1.length > 0 && <span className="action-tag">Zieh</span>}
+              {activePlayer === 1 && deck1.length > 0 && draws1 < 2 && <span className="action-tag">Zieh</span>}
             </div>
             <div className="mini-pile graveyard empty">
               <span className="count">{grave1.length}</span>
@@ -714,6 +796,14 @@ function Duellraum() {
                     className = "mini-card-wrapper selected-attacker";
                   }
 
+                  if(hitEffect?.target === "field1" && hitEffect.index === index){
+                    className += " hit-flash";
+                  }
+
+                  if(card.hasAttacked){
+                    className += " spent-attacker";
+                  }
+
                   function handleClick(){
                     if(activePlayer === 1 ){
                       handleOwnFieldCardClick(index);
@@ -722,7 +812,7 @@ function Duellraum() {
                     }
                   }
 
-                  return (<div key={`p1-field-${index}`} className={className} onClick={handleClick}>
+                  return (<div key={`p1-field-${index}`} className={className} onClick={handleClick} onMouseEnter={() => setPreviewCard(card)} onMouseLeave={() => setPreviewCard(null)}>
                           <Card {...card}/>
                           </div>
                           );
@@ -736,7 +826,7 @@ function Duellraum() {
             <div className="hand-zone user-hand">
               {activePlayer === 1 ? (
                 hand1.map((card, index) => (
-                  <div key={`p1-hand-${index}`} className="mini-card-wrapper click-play" onClick={() => playCard(index)}>
+                  <div key={`p1-hand-${index}`} className={`mini-card-wrapper click-play ${playErrorIndex === index ? 'shake' : ''} ${pendingSpellIndex === index ? 'pending-spell' : ''}`} onClick={() => handleHandCardClick(index, card)} onMouseEnter={() => setPreviewCard(card)} onMouseLeave={() => setPreviewCard(null)}>
                     <Card {...card} />
                     <div className="card-action-overlay color-green">Spielen</div>
                   </div>
@@ -754,6 +844,12 @@ function Duellraum() {
         </section>
 
       </div>
+
+      {previewCard && (
+        <div className="card-preview-panel">
+          <Card {...previewCard} />
+        </div>
+      )}
     </div>
   );
 }

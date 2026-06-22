@@ -39,6 +39,30 @@ export async function logout() {
     return response.json();
 }
 
+export async function getProfile() {
+    const response = await fetch(baseURL + "profile.php", {
+        method: "GET",
+        credentials: "include",
+    });
+
+    return response.json();
+}
+
+export async function changePassword(currentPassword, newPassword, newPasswordConfirm) {
+    const formData = new FormData();
+    formData.append("currentPassword", currentPassword);
+    formData.append("newPassword", newPassword);
+    formData.append("newPasswordConfirm", newPasswordConfirm);
+
+    const response = await fetch(baseURL + "changePassword.php", {
+        method: "POST",
+        body: formData,
+        credentials: "include",
+    });
+
+    return response.json();
+}
+
 export async function saveDeck(name, cards, deckId = null) {
     const response = await fetch(baseURL + "saveDeck.php", {
         method: "POST",

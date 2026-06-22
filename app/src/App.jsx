@@ -17,7 +17,7 @@ function ProtectedRoute({ isLoggedIn, children }) {
 
 
 function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem("user"));
 
   async function handleLogout() {
     try{
@@ -35,7 +35,7 @@ function App() {
       
       <div style={{ padding: '20px' }}>
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/" element={<Home isLoggedIn={isLoggedIn} />} />
           <Route path="/faq" element={<FAQPage />} />
           <Route path="/deckbuilder" element={<ProtectedRoute isLoggedIn={isLoggedIn}><Deckbuilder /></ProtectedRoute>} />
           <Route path="/deck"        element={<ProtectedRoute isLoggedIn={isLoggedIn}><DeckPage /></ProtectedRoute>} />
